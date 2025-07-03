@@ -3,6 +3,7 @@
 import { CashFlowEntry } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { CashFlowActions } from './cash-flow-actions';
 
 export const columns = [
   {
@@ -68,3 +69,10 @@ export const columns = [
     }
   },
 ];
+
+export const cashFlowTableActions = (row: CashFlowEntry) => {
+  if (row.category === 'Penjualan') {
+    return null;
+  }
+  return <CashFlowActions entry={row} />;
+};

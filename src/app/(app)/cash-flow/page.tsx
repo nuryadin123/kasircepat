@@ -2,13 +2,12 @@ import { Header } from '@/components/shared/header';
 import { Button } from '@/components/ui/button';
 import { ArrowDownLeft, ArrowUpRight, PlusCircle, Scale } from 'lucide-react';
 import { DataTable } from '@/components/data-table';
-import { columns } from '@/components/cash-flow/columns';
+import { columns, cashFlowTableActions } from '@/components/cash-flow/columns';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, orderBy, query } from 'firebase/firestore';
 import type { Sale, CashFlowEntry } from '@/types';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { CashFlowFormDialog } from '@/components/cash-flow/cash-flow-form-dialog';
-import { CashFlowActions } from '@/components/cash-flow/cash-flow-actions';
 
 async function getCashFlowData(): Promise<{
     entries: CashFlowEntry[],
@@ -38,7 +37,12 @@ async function getCashFlowData(): Promise<{
     } as CashFlowEntry;
   });
 
-  const manualEntries = cashFlowSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CashFlowEntry));
+  const manualEntries = cashFlowSnapshot.docs.map(doc => {
+    const data = doc.data();
+    // Handle potential timestamp conversion for manually added entries too
+    const date = typeof data.date === 'string' ? data.date : (data.date as any).toDate().toISOString();
+    return { ...data, id: doc.id, date } as CashFlowEntry
+  });
   
   const allEntries = [...salesEntries, ...manualEntries].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
@@ -58,13 +62,6 @@ async function getCashFlowData(): Promise<{
 
 export default async function CashFlowPage() {
   const { entries, totalIncome, totalExpense, netCashFlow } = await getCashFlowData();
-
-  const renderActions = (row: CashFlowEntry) => {
-    if (row.category === 'Penjualan') {
-      return null;
-    }
-    return <CashFlowActions entry={row} />;
-  };
 
   return (
     <>
@@ -107,7 +104,7 @@ export default async function CashFlowPage() {
           />
       </div>
       <div className="mt-4">
-        <DataTable columns={columns} data={entries} actions={renderActions} />
+        <DataTable columns={columns} data={entries} actions={cashFlowTableActions} />
       </div>
     </>
   );
