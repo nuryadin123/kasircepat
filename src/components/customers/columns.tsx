@@ -1,10 +1,9 @@
 'use client';
 
 import { Customer } from '@/types';
-import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { CustomerActions } from './customer-actions';
+
 
 export const columns = [
   {
@@ -36,26 +35,10 @@ export const columns = [
   {
     accessorKey: 'joinedDate',
     header: 'Tanggal Bergabung',
+    cell: (row: Customer) => new Date(row.joinedDate as string).toLocaleDateString('id-ID'),
   },
 ];
 
 export const customerActions = (row: Customer) => (
-    <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0">
-            <span className="sr-only">Buka menu</span>
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem>
-            <Pencil className="mr-2 h-4 w-4"/>
-            Edit
-          </DropdownMenuItem>
-          <DropdownMenuItem className="text-destructive">
-            <Trash2 className="mr-2 h-4 w-4"/>
-            Hapus
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+  <CustomerActions customer={row} />
 );
