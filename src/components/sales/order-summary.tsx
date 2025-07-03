@@ -19,12 +19,12 @@ export function OrderSummary({ items, onItemRemove, onQuantityChange, onCheckout
   const total = subtotal + tax;
 
   return (
-    <Card className="sticky top-4">
+    <Card className="h-full flex flex-col md:rounded-lg">
       <CardHeader>
         <CardTitle className="font-headline">Pesanan Saat Ini</CardTitle>
       </CardHeader>
-      <CardContent className="flex-grow overflow-auto p-0">
-        <div className="px-6 space-y-4 max-h-[40vh] overflow-y-auto">
+      <CardContent className="flex-grow p-6 overflow-y-auto">
+        <div className="space-y-4">
         {items.length === 0 ? (
           <p className="text-center text-muted-foreground py-10">
             Belum ada item yang dipilih.
@@ -57,7 +57,7 @@ export function OrderSummary({ items, onItemRemove, onQuantityChange, onCheckout
         )}
         </div>
       </CardContent>
-      <CardFooter className="flex-col items-stretch gap-2 pt-6">
+      <CardFooter className="flex-col items-stretch gap-2 pt-6 mt-auto border-t">
         <Separator />
         <div className="flex justify-between">
           <span>Subtotal</span>

@@ -9,6 +9,10 @@ import { useToast } from '@/hooks/use-toast';
 import { ReceiptDialog } from '@/components/sales/receipt-dialog';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { ShoppingBag } from 'lucide-react';
 
 export default function SalesPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -16,6 +20,12 @@ export default function SalesPage() {
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
   const [lastOrder, setLastOrder] = useState<SaleItem[]>([]);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
+  const [hasMounted, setHasMounted] = useState(false);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -105,19 +115,58 @@ export default function SalesPage() {
       });
     }
   };
+  
+  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const tax = subtotal * 0.11;
+  const total = subtotal + tax;
+
+  if (!hasMounted) {
+    return (
+        <>
+            <Header title="Pemrosesan Penjualan" />
+        </>
+    );
+  }
 
   return (
     <>
       <Header title="Pemrosesan Penjualan" />
-      <div className="grid md:grid-cols-[1fr_400px] gap-8 items-start mt-4">
+      <div className="grid md:grid-cols-[1fr_400px] gap-8 items-start mt-4 pb-24 md:pb-0">
         <ProductSelector products={products} onProductSelect={handleProductSelect} />
-        <OrderSummary 
-          items={cart}
-          onItemRemove={handleItemRemove}
-          onQuantityChange={handleQuantityChange}
-          onCheckout={handleCheckout}
-        />
+        
+        <div className="hidden md:block sticky top-4">
+          <OrderSummary 
+            items={cart}
+            onItemRemove={handleItemRemove}
+            onQuantityChange={handleQuantityChange}
+            onCheckout={handleCheckout}
+          />
+        </div>
       </div>
+      
+      {isMobile && cart.length > 0 && (
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button className="fixed bottom-4 inset-x-4 h-auto p-3 rounded-lg shadow-lg z-20 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <ShoppingBag className="h-6 w-6" />
+                <span className="font-semibold">{totalItems} Item</span>
+              </div>
+              <span className="font-bold text-base">Rp{new Intl.NumberFormat('id-ID').format(total)}</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="bottom" className="h-[90vh] flex flex-col p-0">
+             <OrderSummary 
+              items={cart}
+              onItemRemove={handleItemRemove}
+              onQuantityChange={handleQuantityChange}
+              onCheckout={handleCheckout}
+            />
+          </SheetContent>
+        </Sheet>
+      )}
+
       <ReceiptDialog 
         isOpen={isReceiptOpen}
         onClose={() => setIsReceiptOpen(false)}
