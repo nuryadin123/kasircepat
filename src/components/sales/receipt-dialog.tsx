@@ -24,8 +24,11 @@ export function ReceiptDialog({ isOpen, onClose, sale }: ReceiptDialogProps) {
     return null;
   }
   
-  const subtotal = sale.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const tax = subtotal * 0.11;
+  // Handle both old and new sale structures for backward compatibility
+  const subtotal = sale.subtotal ?? sale.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const discountAmount = sale.discountAmount ?? 0;
+  const discountedSubtotal = subtotal - discountAmount;
+  const tax = sale.tax ?? discountedSubtotal * 0.11;
   const total = sale.total;
 
   return (
@@ -66,6 +69,12 @@ export function ReceiptDialog({ isOpen, onClose, sale }: ReceiptDialogProps) {
                           <p className="text-muted-foreground">Subtotal</p>
                           <p>Rp{new Intl.NumberFormat('id-ID').format(subtotal)}</p>
                       </div>
+                      {discountAmount > 0 && (
+                        <div className="flex justify-between">
+                            <p className="text-muted-foreground">Diskon</p>
+                            <p>-Rp{new Intl.NumberFormat('id-ID').format(discountAmount)}</p>
+                        </div>
+                      )}
                       <div className="flex justify-between">
                           <p className="text-muted-foreground">Pajak (11%)</p>
                           <p>Rp{new Intl.NumberFormat('id-ID').format(tax)}</p>

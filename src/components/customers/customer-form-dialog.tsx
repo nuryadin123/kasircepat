@@ -32,8 +32,7 @@ import { Loader2 } from 'lucide-react';
 
 const customerFormSchema = z.object({
   name: z.string().min(1, { message: 'Nama pelanggan tidak boleh kosong.' }),
-  email: z.string().email({ message: 'Format email tidak valid.' }),
-  phone: z.string().min(1, { message: 'Nomor telepon tidak boleh kosong.' }),
+  discount: z.coerce.number().min(0, { message: 'Diskon harus positif.' }).max(100, { message: 'Diskon tidak boleh lebih dari 100.' }),
 });
 
 type CustomerFormValues = z.infer<typeof customerFormSchema>;
@@ -53,12 +52,10 @@ export function CustomerFormDialog({ customer, children }: CustomerFormDialogPro
     resolver: zodResolver(customerFormSchema),
     defaultValues: customer ? {
       name: customer.name,
-      email: customer.email,
-      phone: customer.phone,
+      discount: customer.discount,
     } : {
       name: '',
-      email: '',
-      phone: '',
+      discount: 0,
     },
   });
 
@@ -121,25 +118,12 @@ export function CustomerFormDialog({ customer, children }: CustomerFormDialogPro
             />
             <FormField
               control={form.control}
-              name="email"
+              name="discount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Diskon (%)</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="cth. budi@email.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Telepon</FormLabel>
-                  <FormControl>
-                    <Input placeholder="cth. 08123456789" {...field} />
+                    <Input type="number" placeholder="cth. 10" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

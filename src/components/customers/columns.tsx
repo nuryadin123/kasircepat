@@ -19,12 +19,9 @@ export const columns = [
     ),
   },
   {
-    accessorKey: 'email',
-    header: 'Email',
-  },
-  {
-    accessorKey: 'phone',
-    header: 'Telepon',
+    accessorKey: 'discount',
+    header: 'Diskon',
+    cell: (row: Customer) => `${row.discount}%`,
   },
   {
     accessorKey: 'totalSpent',

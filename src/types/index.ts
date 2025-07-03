@@ -10,8 +10,7 @@ export type Product = {
 export type Customer = {
   id: string;
   name: string;
-  email: string;
-  phone: string;
+  discount: number;
   joinedDate: string;
   totalSpent: number;
 };
@@ -30,6 +29,9 @@ export type Sale = {
   total: number;
   paymentMethod: 'Cash' | 'Card';
   customer?: Customer;
+  subtotal?: number;
+  discountAmount?: number;
+  tax?: number;
 };
 
 export type User = {

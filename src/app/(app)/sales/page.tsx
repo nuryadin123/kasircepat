@@ -109,13 +109,19 @@ export default function SalesPage() {
     
     try {
       const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
-      const tax = subtotal * 0.11;
-      const total = subtotal + tax;
       const selectedCustomer = customers.find(c => c.id === selectedCustomerId);
+      const discountPercentage = selectedCustomer?.discount || 0;
+      const discountAmount = subtotal * (discountPercentage / 100);
+      const discountedSubtotal = subtotal - discountAmount;
+      const tax = discountedSubtotal * 0.11;
+      const total = discountedSubtotal + tax;
 
       const saleData = {
         date: serverTimestamp(),
         items: cart,
+        subtotal: subtotal,
+        discountAmount: discountAmount,
+        tax: tax,
         total: total,
         paymentMethod: 'Card', // Hardcoded for now
         ...(selectedCustomer && { customer: selectedCustomer })
@@ -127,6 +133,9 @@ export default function SalesPage() {
           id: docRef.id,
           date: new Date().toISOString(),
           items: [...cart],
+          subtotal,
+          discountAmount,
+          tax,
           total,
           paymentMethod: 'Card',
           customer: selectedCustomer,
@@ -152,8 +161,12 @@ export default function SalesPage() {
   
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const tax = subtotal * 0.11;
-  const total = subtotal + tax;
+  const selectedCustomer = customers.find(c => c.id === selectedCustomerId);
+  const discountPercentage = selectedCustomer?.discount || 0;
+  const discountAmount = subtotal * (discountPercentage / 100);
+  const discountedSubtotal = subtotal - discountAmount;
+  const tax = discountedSubtotal * 0.11;
+  const total = discountedSubtotal + tax;
 
   if (!hasMounted) {
     return (

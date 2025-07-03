@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { SaleItem, Customer } from '@/types';
-import { X, MinusCircle, PlusCircle, User } from 'lucide-react';
+import { X, MinusCircle, PlusCircle, User, Percent } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface OrderSummaryProps {
@@ -19,8 +19,14 @@ interface OrderSummaryProps {
 
 export function OrderSummary({ items, customers, selectedCustomerId, onItemRemove, onQuantityChange, onCheckout, onCustomerSelect }: OrderSummaryProps) {
   const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const tax = subtotal * 0.11;
-  const total = subtotal + tax;
+
+  const selectedCustomer = customers.find(c => c.id === selectedCustomerId);
+  const discountPercentage = selectedCustomer?.discount || 0;
+  const discountAmount = subtotal * (discountPercentage / 100);
+  const discountedSubtotal = subtotal - discountAmount;
+  
+  const tax = discountedSubtotal * 0.11;
+  const total = discountedSubtotal + tax;
 
   return (
     <Card className="h-full flex flex-col md:rounded-lg">
@@ -45,7 +51,10 @@ export function OrderSummary({ items, customers, selectedCustomerId, onItemRemov
                 <SelectItem value="umum">Pelanggan Umum</SelectItem>
                 {customers.map((customer) => (
                   <SelectItem key={customer.id} value={customer.id}>
-                    {customer.name}
+                    <div className="flex justify-between w-full items-center">
+                      <span>{customer.name}</span>
+                      {customer.discount > 0 && <span className="text-xs text-muted-foreground flex items-center gap-1 bg-primary/10 text-primary px-2 py-0.5 rounded-full"><Percent className="h-3 w-3" /> {customer.discount}%</span>}
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -90,6 +99,12 @@ export function OrderSummary({ items, customers, selectedCustomerId, onItemRemov
           <span>Subtotal</span>
           <span>Rp{new Intl.NumberFormat('id-ID').format(subtotal)}</span>
         </div>
+        {discountAmount > 0 && (
+          <div className="flex justify-between text-primary font-medium">
+            <span>Diskon ({discountPercentage}%)</span>
+            <span>-Rp{new Intl.NumberFormat('id-ID').format(discountAmount)}</span>
+          </div>
+        )}
         <div className="flex justify-between text-muted-foreground">
           <span>Pajak (11%)</span>
           <span>Rp{new Intl.NumberFormat('id-ID').format(tax)}</span>
