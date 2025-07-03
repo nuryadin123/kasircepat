@@ -91,7 +91,7 @@ export const columns = [
 ];
 
 export const cashFlowTableActions = (row: CashFlowEntry) => {
-  if (row.category === 'Penjualan') {
+  if (row.category === 'Penjualan' || row.category === 'Biaya Pokok Penjualan') {
     return null;
   }
   return <CashFlowActions entry={row} />;

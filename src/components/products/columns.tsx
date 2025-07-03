@@ -16,8 +16,13 @@ export const columns = [
   },
   {
     accessorKey: 'price',
-    header: 'Harga',
+    header: 'Harga Jual',
     cell: (row: Product) => `Rp${new Intl.NumberFormat('id-ID').format(row.price)}`,
+  },
+  {
+    accessorKey: 'cost',
+    header: 'Harga Modal',
+    cell: (row: Product) => `Rp${new Intl.NumberFormat('id-ID').format(row.cost)}`,
   },
   {
     accessorKey: 'stock',

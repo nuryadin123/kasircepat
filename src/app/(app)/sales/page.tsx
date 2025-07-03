@@ -83,6 +83,7 @@ export default function SalesPage() {
           name: product.name,
           price: product.price,
           quantity: 1,
+          cost: product.cost,
         },
       ];
     });
@@ -124,6 +125,8 @@ export default function SalesPage() {
         const discountPercentage = selectedCustomer?.discount || 0;
         const discountAmount = subtotal * (discountPercentage / 100);
         const total = subtotal - discountAmount;
+        
+        const totalCost = cart.reduce((acc, item) => acc + (item.cost || 0) * item.quantity, 0);
 
         const newSaleRef = doc(collection(db, "sales"));
         const saleData = {
@@ -136,8 +139,20 @@ export default function SalesPage() {
             paymentMethod: 'Card' as const,
             ...(selectedCustomer && { customer: selectedCustomer })
         };
-
         transaction.set(newSaleRef, saleData);
+        
+        if (totalCost > 0) {
+            const expenseRef = doc(collection(db, 'cash-flow'));
+            const expenseData = {
+                date: new Date().toISOString(),
+                type: 'Pengeluaran',
+                description: `Biaya Pokok Penjualan ${formattedTransactionId}`,
+                amount: totalCost,
+                category: 'Biaya Pokok Penjualan',
+            };
+            transaction.set(expenseRef, expenseData);
+        }
+
         transaction.set(counterRef, { lastNumber: newTransactionNumber });
 
         return {

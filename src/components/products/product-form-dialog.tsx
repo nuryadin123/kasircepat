@@ -34,6 +34,7 @@ const productFormSchema = z.object({
   name: z.string().min(1, { message: 'Nama produk tidak boleh kosong.' }),
   category: z.string().min(1, { message: 'Kategori tidak boleh kosong.' }),
   price: z.coerce.number().min(0, { message: 'Harga harus positif.' }),
+  cost: z.coerce.number().min(0, { message: 'Harga modal harus positif.' }),
   stock: z.coerce.number().int({ message: 'Stok harus berupa angka bulat.' }).min(0, { message: 'Stok tidak boleh negatif.' }),
 });
 
@@ -57,11 +58,13 @@ export function ProductFormDialog({ product, children }: ProductFormDialogProps)
       category: product.category,
       price: product.price,
       stock: product.stock,
+      cost: product.cost || 0,
     } : {
       name: '',
       category: '',
       price: 0,
       stock: 0,
+      cost: 0,
     },
   });
 
@@ -139,9 +142,22 @@ export function ProductFormDialog({ product, children }: ProductFormDialogProps)
               name="price"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Harga</FormLabel>
+                  <FormLabel>Harga Jual</FormLabel>
                   <FormControl>
                     <Input type="number" placeholder="cth. 25000" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="cost"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Harga Modal</FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="cth. 15000" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
