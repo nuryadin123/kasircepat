@@ -3,6 +3,7 @@
 import { Sale } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { SaleActions } from './sale-actions';
+import { SaleDetailDialog } from './sale-detail-dialog';
 
 export const columns = [
   {
@@ -40,7 +41,13 @@ export const columns = [
   {
     accessorKey: 'items',
     header: 'Jumlah Item',
-    cell: (row: Sale) => `${row.items.reduce((sum, item) => sum + item.quantity, 0)} item`,
+    cell: (row: Sale) => (
+      <SaleDetailDialog sale={row}>
+        <button className="underline underline-offset-4 decoration-dashed hover:decoration-solid hover:text-primary transition-colors">
+          {`${row.items.reduce((sum, item) => sum + item.quantity, 0)} item`}
+        </button>
+      </SaleDetailDialog>
+    ),
   },
   {
     accessorKey: 'total',
