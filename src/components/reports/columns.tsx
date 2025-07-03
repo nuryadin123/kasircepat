@@ -2,6 +2,7 @@
 
 import { Sale } from '@/types';
 import { Badge } from '@/components/ui/badge';
+import { SaleActions } from './sale-actions';
 
 export const columns = [
   {
@@ -30,3 +31,7 @@ export const columns = [
     cell: (row: Sale) => <Badge variant={row.paymentMethod === 'Card' ? 'default' : 'secondary'}>{row.paymentMethod}</Badge>,
   },
 ];
+
+export const saleActions = (row: Sale) => (
+  <SaleActions sale={row} />
+);

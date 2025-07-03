@@ -2,7 +2,7 @@ import { Header } from '@/components/shared/header';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import { DataTable } from '@/components/data-table';
-import { columns } from '@/components/reports/columns';
+import { columns, saleActions } from '@/components/reports/columns';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, orderBy, query } from 'firebase/firestore';
 import type { Sale } from '@/types';
@@ -36,7 +36,7 @@ export default async function ReportsPage() {
         </Button>
       </div>
       <div className="mt-4">
-        <DataTable columns={columns} data={sales} />
+        <DataTable columns={columns} data={sales} actions={saleActions} />
       </div>
     </>
   );
