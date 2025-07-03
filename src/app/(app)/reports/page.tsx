@@ -3,9 +3,28 @@ import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import { DataTable } from '@/components/data-table';
 import { columns } from '@/components/reports/columns';
-import { mockSales } from '@/lib/data';
+import { db } from '@/lib/firebase';
+import { collection, getDocs, orderBy, query } from 'firebase/firestore';
+import type { Sale } from '@/types';
 
-export default function ReportsPage() {
+async function getSales(): Promise<Sale[]> {
+  const salesCol = query(collection(db, 'sales'), orderBy('date', 'desc'));
+  const salesSnapshot = await getDocs(salesCol);
+  const salesList = salesSnapshot.docs.map(doc => {
+    const data = doc.data();
+    return { 
+      id: doc.id, 
+      ...data,
+      date: data.date.toDate().toISOString(),
+    } as Sale
+  });
+  return salesList;
+}
+
+
+export default async function ReportsPage() {
+  const sales = await getSales();
+
   return (
     <>
       <Header title="Laporan Penjualan" />
@@ -17,7 +36,7 @@ export default function ReportsPage() {
         </Button>
       </div>
       <div className="mt-4">
-        <DataTable columns={columns} data={mockSales} />
+        <DataTable columns={columns} data={sales} />
       </div>
     </>
   );

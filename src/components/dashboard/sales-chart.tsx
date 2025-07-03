@@ -3,21 +3,15 @@
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
-const data = [
-  { name: "Sen", total: Math.floor(Math.random() * 500000) + 100000 },
-  { name: "Sel", total: Math.floor(Math.random() * 500000) + 100000 },
-  { name: "Rab", total: Math.floor(Math.random() * 500000) + 100000 },
-  { name: "Kam", total: Math.floor(Math.random() * 500000) + 100000 },
-  { name: "Jum", total: Math.floor(Math.random() * 500000) + 100000 },
-  { name: "Sab", total: Math.floor(Math.random() * 500000) + 100000 },
-  { name: "Min", total: Math.floor(Math.random() * 500000) + 100000 },
-]
+interface SalesChartProps {
+    data: { name: string; total: number }[];
+}
 
-export function SalesChart() {
+export function SalesChart({ data = [] }: SalesChartProps) {
   return (
     <Card className="col-span-4">
       <CardHeader>
-        <CardTitle className="font-headline">Ringkasan Penjualan Minggu Ini</CardTitle>
+        <CardTitle className="font-headline">Ringkasan Penjualan</CardTitle>
       </CardHeader>
       <CardContent className="pl-2">
         <ResponsiveContainer width="100%" height={350}>

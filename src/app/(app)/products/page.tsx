@@ -3,9 +3,19 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { DataTable } from '@/components/data-table';
 import { columns, productActions } from '@/components/products/columns';
-import { mockProducts } from '@/lib/data';
+import { db } from '@/lib/firebase';
+import { collection, getDocs } from 'firebase/firestore';
+import type { Product } from '@/types';
 
-export default function ProductsPage() {
+async function getProducts(): Promise<Product[]> {
+  const productsCol = collection(db, 'products');
+  const productSnapshot = await getDocs(productsCol);
+  const productList = productSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
+  return productList;
+}
+
+export default async function ProductsPage() {
+  const products = await getProducts();
   return (
     <>
       <Header title="Manajemen Produk" />
@@ -17,7 +27,7 @@ export default function ProductsPage() {
         </Button>
       </div>
       <div className="mt-4">
-        <DataTable columns={columns} data={mockProducts} actions={productActions} />
+        <DataTable columns={columns} data={products} actions={productActions} />
       </div>
     </>
   );
