@@ -27,51 +27,56 @@ export function ReceiptDialog({ isOpen, onClose, items }: ReceiptDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-xs">
-        <DialogHeader>
-          <DialogTitle className="font-headline text-center">Struk Pembelian</DialogTitle>
-          <DialogDescription className="text-center">
-            Terima kasih atas pembelian Anda.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="py-2 text-sm">
-            <div className="space-y-2">
-                <div className="text-center text-muted-foreground">
-                    <p>Kasiran App</p>
-                    <p>{new Date().toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short'})}</p>
-                </div>
-                <Separator />
-                <div className="space-y-2">
-                    {items.map((item) => (
-                        <div key={item.productId} className="flex">
-                            <div className="flex-1">
-                                <p className="font-medium">{item.name}</p>
-                                <p className="text-muted-foreground">
-                                    {item.quantity} x Rp{new Intl.NumberFormat('id-ID').format(item.price)}
-                                </p>
-                            </div>
-                            <p>Rp{new Intl.NumberFormat('id-ID').format(item.price * item.quantity)}</p>
-                        </div>
-                    ))}
-                </div>
-                <Separator />
-                 <div className="space-y-1">
-                    <div className="flex justify-between">
-                        <p className="text-muted-foreground">Subtotal</p>
-                        <p>Rp{new Intl.NumberFormat('id-ID').format(subtotal)}</p>
-                    </div>
-                    <div className="flex justify-between">
-                        <p className="text-muted-foreground">Pajak (11%)</p>
-                        <p>Rp{new Intl.NumberFormat('id-ID').format(tax)}</p>
-                    </div>
-                </div>
-                <Separator />
-                <div className="flex justify-between font-bold text-base">
-                    <p>Total</p>
-                    <p>Rp{new Intl.NumberFormat('id-ID').format(total)}</p>
-                </div>
-            </div>
+        <div id="printable-receipt">
+          <DialogHeader className="print:hidden">
+            <DialogTitle className="font-headline text-center">Struk Pembelian</DialogTitle>
+            <DialogDescription className="text-center">
+              Terima kasih atas pembelian Anda.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2 font-mono text-sm">
+              <div className="space-y-2">
+                  <div className="text-center text-muted-foreground">
+                      <p className="font-bold text-black">Kasiran App</p>
+                      <p className="text-xs text-black">{new Date().toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short'})}</p>
+                  </div>
+                  <Separator className="my-2 border-dashed" />
+                  <div className="space-y-2">
+                      {items.map((item) => (
+                          <div key={item.productId} className="flex">
+                              <div className="flex-1">
+                                  <p className="font-medium">{item.name}</p>
+                                  <p className="text-muted-foreground">
+                                      {item.quantity} x Rp{new Intl.NumberFormat('id-ID').format(item.price)}
+                                  </p>
+                              </div>
+                              <p>Rp{new Intl.NumberFormat('id-ID').format(item.price * item.quantity)}</p>
+                          </div>
+                      ))}
+                  </div>
+                  <Separator className="my-2 border-dashed" />
+                   <div className="space-y-1">
+                      <div className="flex justify-between">
+                          <p className="text-muted-foreground">Subtotal</p>
+                          <p>Rp{new Intl.NumberFormat('id-ID').format(subtotal)}</p>
+                      </div>
+                      <div className="flex justify-between">
+                          <p className="text-muted-foreground">Pajak (11%)</p>
+                          <p>Rp{new Intl.NumberFormat('id-ID').format(tax)}</p>
+                      </div>
+                  </div>
+                  <Separator className="my-2 border-dashed" />
+                  <div className="flex justify-between font-bold text-base">
+                      <p>Total</p>
+                      <p>Rp{new Intl.NumberFormat('id-ID').format(total)}</p>
+                  </div>
+                  <div className="text-center text-muted-foreground mt-4 text-xs">
+                      <p>--- Terima Kasih ---</p>
+                  </div>
+              </div>
+          </div>
         </div>
-        <DialogFooter className="flex-col gap-2 pt-4">
+        <DialogFooter className="flex-col gap-2 pt-4 print:hidden">
           <Button type="button" onClick={() => window.print()} className="w-full">
             <Printer className="mr-2 h-4 w-4" />
             Cetak Struk

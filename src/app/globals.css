@@ -67,3 +67,26 @@
     @apply bg-background text-foreground;
   }
 }
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #printable-receipt, #printable-receipt * {
+    visibility: visible;
+  }
+  #printable-receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    margin: 0;
+    padding: 0.5rem;
+    width: 100%;
+    font-size: 10pt;
+    color: black;
+    background: white;
+  }
+   @page {
+    margin: 0mm;
+  }
+}
