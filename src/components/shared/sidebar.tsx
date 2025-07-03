@@ -10,6 +10,7 @@ import {
   BarChart2,
   Settings,
   Terminal,
+  Landmark,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -25,6 +26,7 @@ export const navItems = [
   { href: '/sales', icon: ShoppingCart, label: 'Penjualan' },
   { href: '/products', icon: Package, label: 'Produk' },
   { href: '/reports', icon: BarChart2, label: 'Laporan' },
+  { href: '/cash-flow', icon: Landmark, label: 'Arus Kas' },
   { href: '/customers', icon: UsersRound, label: 'Pelanggan' },
 ];
 
