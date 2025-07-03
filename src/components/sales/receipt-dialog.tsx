@@ -9,20 +9,24 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import type { SaleItem } from '@/types';
+import type { Sale } from '@/types';
 import { Printer } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
 interface ReceiptDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  items: SaleItem[];
+  sale: Sale | null;
 }
 
-export function ReceiptDialog({ isOpen, onClose, items }: ReceiptDialogProps) {
-  const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+export function ReceiptDialog({ isOpen, onClose, sale }: ReceiptDialogProps) {
+  if (!sale) {
+    return null;
+  }
+  
+  const subtotal = sale.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const tax = subtotal * 0.11;
-  const total = subtotal + tax;
+  const total = sale.total;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -38,11 +42,13 @@ export function ReceiptDialog({ isOpen, onClose, items }: ReceiptDialogProps) {
               <div className="space-y-2">
                   <div className="text-center text-muted-foreground">
                       <p className="font-bold text-black">Kasiran App</p>
-                      <p className="text-xs text-black">{new Date().toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short'})}</p>
+                      <p className="text-xs text-black">{new Date(sale.date).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short'})}</p>
+                      <p className="text-xs text-black truncate">ID: {sale.id}</p>
+                      {sale.customer && <p className="text-xs text-black">Pelanggan: {sale.customer.name}</p>}
                   </div>
                   <Separator className="my-2 border-dashed" />
                   <div className="space-y-2">
-                      {items.map((item) => (
+                      {sale.items.map((item) => (
                           <div key={item.productId} className="flex">
                               <div className="flex-1">
                                   <p className="font-medium">{item.name}</p>

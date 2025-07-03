@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react';
 import { Header } from '@/components/shared/header';
 import { OrderSummary } from '@/components/sales/order-summary';
 import { ProductSelector } from '@/components/sales/product-selector';
-import type { Product, SaleItem } from '@/types';
+import type { Product, SaleItem, Customer, Sale } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { ReceiptDialog } from '@/components/sales/receipt-dialog';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, addDoc, serverTimestamp, query, orderBy } from 'firebase/firestore';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -16,9 +16,11 @@ import { ShoppingBag } from 'lucide-react';
 
 export default function SalesPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [cart, setCart] = useState<SaleItem[]>([]);
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
-  const [lastOrder, setLastOrder] = useState<SaleItem[]>([]);
+  const [lastSale, setLastSale] = useState<Sale | null>(null);
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const [hasMounted, setHasMounted] = useState(false);
@@ -43,7 +45,25 @@ export default function SalesPage() {
         })
       }
     };
+    
+    const fetchCustomers = async () => {
+        try {
+            const customersCol = query(collection(db, 'customers'), orderBy('name', 'asc'));
+            const customerSnapshot = await getDocs(customersCol);
+            const customerList = customerSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Customer));
+            setCustomers(customerList);
+        } catch (error) {
+            console.error("Error fetching customers: ", error);
+            toast({
+                title: "Gagal Memuat Pelanggan",
+                description: "Tidak dapat mengambil data pelanggan dari server.",
+                variant: "destructive",
+            })
+        }
+    };
+
     fetchProducts();
+    fetchCustomers();
   }, [toast]);
 
   const handleProductSelect = (product: Product) => {
@@ -91,16 +111,30 @@ export default function SalesPage() {
       const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
       const tax = subtotal * 0.11;
       const total = subtotal + tax;
+      const selectedCustomer = customers.find(c => c.id === selectedCustomerId);
 
-      await addDoc(collection(db, "sales"), {
+      const saleData = {
         date: serverTimestamp(),
         items: cart,
         total: total,
         paymentMethod: 'Card', // Hardcoded for now
-      });
+        ...(selectedCustomer && { customer: selectedCustomer })
+      };
+
+      const docRef = await addDoc(collection(db, "sales"), saleData);
       
-      setLastOrder([...cart]);
+      const newSale: Sale = {
+          id: docRef.id,
+          date: new Date().toISOString(),
+          items: [...cart],
+          total,
+          paymentMethod: 'Card',
+          customer: selectedCustomer,
+      };
+      
+      setLastSale(newSale);
       setCart([]);
+      setSelectedCustomerId(null);
       setIsReceiptOpen(true);
       toast({
           title: "Transaksi Berhasil",
@@ -141,6 +175,9 @@ export default function SalesPage() {
             onItemRemove={handleItemRemove}
             onQuantityChange={handleQuantityChange}
             onCheckout={handleCheckout}
+            customers={customers}
+            selectedCustomerId={selectedCustomerId}
+            onCustomerSelect={setSelectedCustomerId}
           />
         </div>
       </div>
@@ -163,6 +200,9 @@ export default function SalesPage() {
               onItemRemove={handleItemRemove}
               onQuantityChange={handleQuantityChange}
               onCheckout={handleCheckout}
+              customers={customers}
+              selectedCustomerId={selectedCustomerId}
+              onCustomerSelect={setSelectedCustomerId}
             />
           </SheetContent>
         </Sheet>
@@ -171,7 +211,7 @@ export default function SalesPage() {
       <ReceiptDialog 
         isOpen={isReceiptOpen}
         onClose={() => setIsReceiptOpen(false)}
-        items={lastOrder}
+        sale={lastSale}
       />
     </>
   );
