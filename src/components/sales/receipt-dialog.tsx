@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -10,10 +9,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { summarizePurchase } from '@/ai/flows/summarize-purchase';
 import type { SaleItem } from '@/types';
-import { Loader2, Printer, CheckCircle } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import { Printer } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 
 interface ReceiptDialogProps {
   isOpen: boolean;
@@ -22,65 +20,64 @@ interface ReceiptDialogProps {
 }
 
 export function ReceiptDialog({ isOpen, onClose, items }: ReceiptDialogProps) {
-  const [summary, setSummary] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (isOpen && items.length > 0) {
-      const fetchSummary = async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-          const purchaseItems = items.map(item => ({
-            name: item.name,
-            quantity: item.quantity,
-          }));
-          const result = await summarizePurchase({ items: purchaseItems });
-          setSummary(result.summary);
-        } catch (e) {
-          console.error(e);
-          setError('Gagal membuat ringkasan. Silakan coba lagi.');
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      fetchSummary();
-    }
-  }, [isOpen, items]);
+  const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const tax = subtotal * 0.11;
+  const total = subtotal + tax;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-xs">
         <DialogHeader>
-          <DialogTitle className="font-headline">Ringkasan Pembelian</DialogTitle>
-          <DialogDescription>
-            Berikut adalah ringkasan pembelian untuk dicetak.
+          <DialogTitle className="font-headline text-center">Struk Pembelian</DialogTitle>
+          <DialogDescription className="text-center">
+            Terima kasih atas pembelian Anda.
           </DialogDescription>
         </DialogHeader>
-        <div className="py-4">
-          {isLoading && (
-            <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-              <Loader2 className="h-8 w-8 animate-spin" />
-              <p>Membuat ringkasan...</p>
+        <div className="py-2 text-sm">
+            <div className="space-y-2">
+                <div className="text-center text-muted-foreground">
+                    <p>Kasiran App</p>
+                    <p>{new Date().toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short'})}</p>
+                </div>
+                <Separator />
+                <div className="space-y-2">
+                    {items.map((item) => (
+                        <div key={item.productId} className="flex">
+                            <div className="flex-1">
+                                <p className="font-medium">{item.name}</p>
+                                <p className="text-muted-foreground">
+                                    {item.quantity} x Rp{new Intl.NumberFormat('id-ID').format(item.price)}
+                                </p>
+                            </div>
+                            <p>Rp{new Intl.NumberFormat('id-ID').format(item.price * item.quantity)}</p>
+                        </div>
+                    ))}
+                </div>
+                <Separator />
+                 <div className="space-y-1">
+                    <div className="flex justify-between">
+                        <p className="text-muted-foreground">Subtotal</p>
+                        <p>Rp{new Intl.NumberFormat('id-ID').format(subtotal)}</p>
+                    </div>
+                    <div className="flex justify-between">
+                        <p className="text-muted-foreground">Pajak (11%)</p>
+                        <p>Rp{new Intl.NumberFormat('id-ID').format(tax)}</p>
+                    </div>
+                </div>
+                <Separator />
+                <div className="flex justify-between font-bold text-base">
+                    <p>Total</p>
+                    <p>Rp{new Intl.NumberFormat('id-ID').format(total)}</p>
+                </div>
             </div>
-          )}
-          {error && <p className="text-destructive">{error}</p>}
-          {!isLoading && !error && summary && (
-            <Alert variant="default" className="bg-primary/5">
-                <CheckCircle className="h-4 w-4 !text-primary" />
-                <AlertTitle>Struk Pembelian</AlertTitle>
-                <AlertDescription className="whitespace-pre-wrap">{summary}</AlertDescription>
-            </Alert>
-          )}
         </div>
-        <DialogFooter>
-          <Button type="button" variant="secondary" onClick={onClose}>
-            Tutup
-          </Button>
-          <Button type="button" onClick={() => window.print()} disabled={isLoading}>
+        <DialogFooter className="flex-col gap-2 pt-4">
+          <Button type="button" onClick={() => window.print()} className="w-full">
             <Printer className="mr-2 h-4 w-4" />
-            Cetak
+            Cetak Struk
+          </Button>
+          <Button type="button" variant="outline" onClick={onClose} className="w-full">
+            Tutup
           </Button>
         </DialogFooter>
       </DialogContent>
