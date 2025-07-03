@@ -16,8 +16,13 @@ export const columns = [
     cell: (row: Sale) => new Date(row.date).toLocaleString('id-ID'),
   },
   {
+    accessorKey: 'customer',
+    header: 'Pelanggan',
+    cell: (row: Sale) => row.customer?.name || 'Pelanggan Umum',
+  },
+  {
     accessorKey: 'items',
-    header: 'Item',
+    header: 'Jumlah Item',
     cell: (row: Sale) => `${row.items.reduce((sum, item) => sum + item.quantity, 0)} item`,
   },
   {

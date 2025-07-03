@@ -10,6 +10,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -23,8 +24,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { MoreHorizontal, Trash2, Loader2 } from 'lucide-react';
+import { MoreHorizontal, Trash2, Loader2, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { SaleDetailDialog } from './sale-detail-dialog';
 
 interface SaleActionsProps {
   sale: Sale;
@@ -63,6 +65,13 @@ export function SaleActions({ sale }: SaleActionsProps) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          <SaleDetailDialog sale={sale}>
+             <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                <Eye className="mr-2 h-4 w-4" />
+                Lihat Detail
+             </DropdownMenuItem>
+          </SaleDetailDialog>
+          <DropdownMenuSeparator />
           <AlertDialogTrigger asChild>
             <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
               <Trash2 className="mr-2 h-4 w-4" />
