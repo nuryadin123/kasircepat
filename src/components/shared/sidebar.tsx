@@ -20,7 +20,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
-const navItems = [
+export const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dasbor' },
   { href: '/sales', icon: ShoppingCart, label: 'Penjualan' },
   { href: '/products', icon: Package, label: 'Produk' },
