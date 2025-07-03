@@ -4,6 +4,7 @@ import { Sale } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { SaleActions } from './sale-actions';
 import { SaleDetailDialog } from './sale-detail-dialog';
+import { Button } from '@/components/ui/button';
 
 export const columns = [
   {
@@ -43,9 +44,9 @@ export const columns = [
     header: 'Jumlah Item',
     cell: (row: Sale) => (
       <SaleDetailDialog sale={row}>
-        <button className="underline underline-offset-4 decoration-dashed hover:decoration-solid hover:text-primary transition-colors">
+        <Button variant="link" className="p-0 h-auto font-normal text-xs sm:text-sm">
           {`${row.items.reduce((sum, item) => sum + item.quantity, 0)} item`}
-        </button>
+        </Button>
       </SaleDetailDialog>
     ),
   },
