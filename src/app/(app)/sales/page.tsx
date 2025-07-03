@@ -8,7 +8,7 @@ import type { Product, SaleItem, Customer, Sale } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { ReceiptDialog } from '@/components/sales/receipt-dialog';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, addDoc, serverTimestamp, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, doc, runTransaction, query, orderBy } from 'firebase/firestore';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -108,36 +108,44 @@ export default function SalesPage() {
     if (cart.length === 0) return;
     
     try {
-      const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
-      const selectedCustomer = customers.find(c => c.id === selectedCustomerId);
-      const discountPercentage = selectedCustomer?.discount || 0;
-      const discountAmount = subtotal * (discountPercentage / 100);
-      const total = subtotal - discountAmount;
+      const newSale = await runTransaction(db, async (transaction) => {
+        const counterRef = doc(db, 'counters', 'sales');
+        const counterDoc = await transaction.get(counterRef);
 
-      const saleData = {
-        date: serverTimestamp(),
-        items: cart,
-        subtotal: subtotal,
-        discountAmount: discountAmount,
-        tax: 0,
-        total: total,
-        paymentMethod: 'Card', // Hardcoded for now
-        ...(selectedCustomer && { customer: selectedCustomer })
-      };
+        let newTransactionNumber = 1;
+        if (counterDoc.exists()) {
+            newTransactionNumber = counterDoc.data().lastNumber + 1;
+        }
 
-      const docRef = await addDoc(collection(db, "sales"), saleData);
-      
-      const newSale: Sale = {
-          id: docRef.id,
-          date: new Date().toISOString(),
-          items: [...cart],
-          subtotal,
-          discountAmount,
-          tax: 0,
-          total,
-          paymentMethod: 'Card',
-          customer: selectedCustomer || undefined,
-      };
+        const formattedTransactionId = `TRX-${String(newTransactionNumber).padStart(5, '0')}`;
+        
+        const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+        const selectedCustomer = customers.find(c => c.id === selectedCustomerId);
+        const discountPercentage = selectedCustomer?.discount || 0;
+        const discountAmount = subtotal * (discountPercentage / 100);
+        const total = subtotal - discountAmount;
+
+        const newSaleRef = doc(collection(db, "sales"));
+        const saleData = {
+            transactionId: formattedTransactionId,
+            date: new Date(),
+            items: cart,
+            subtotal,
+            discountAmount,
+            total,
+            paymentMethod: 'Card' as const,
+            ...(selectedCustomer && { customer: selectedCustomer })
+        };
+
+        transaction.set(newSaleRef, saleData);
+        transaction.set(counterRef, { lastNumber: newTransactionNumber });
+
+        return {
+            ...saleData,
+            id: newSaleRef.id,
+            date: saleData.date.toISOString(),
+        } as Sale;
+      });
       
       setLastSale(newSale);
       setCart([]);
@@ -148,7 +156,7 @@ export default function SalesPage() {
           description: "Penjualan telah berhasil diproses.",
       });
     } catch (error) {
-       console.error("Error adding document: ", error);
+       console.error("Error processing transaction: ", error);
        toast({
         title: "Transaksi Gagal",
         description: "Terjadi kesalahan saat memproses penjualan.",

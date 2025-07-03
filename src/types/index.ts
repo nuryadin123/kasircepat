@@ -24,6 +24,7 @@ export type SaleItem = {
 
 export type Sale = {
   id: string;
+  transactionId?: string;
   date: string;
   items: SaleItem[];
   total: number;

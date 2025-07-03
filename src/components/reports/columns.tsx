@@ -5,8 +5,9 @@ import { Badge } from '@/components/ui/badge';
 
 export const columns = [
   {
-    accessorKey: 'id',
-    header: 'ID Penjualan',
+    accessorKey: 'transactionId',
+    header: 'No. Transaksi',
+    cell: (row: Sale) => row.transactionId || row.id.substring(0, 7).toUpperCase(),
   },
   {
     accessorKey: 'date',
