@@ -23,10 +23,7 @@ export function OrderSummary({ items, customers, selectedCustomerId, onItemRemov
   const selectedCustomer = customers.find(c => c.id === selectedCustomerId);
   const discountPercentage = selectedCustomer?.discount || 0;
   const discountAmount = subtotal * (discountPercentage / 100);
-  const discountedSubtotal = subtotal - discountAmount;
-  
-  const tax = discountedSubtotal * 0.11;
-  const total = discountedSubtotal + tax;
+  const total = subtotal - discountAmount;
 
   return (
     <Card className="h-full flex flex-col md:rounded-lg">
@@ -105,10 +102,6 @@ export function OrderSummary({ items, customers, selectedCustomerId, onItemRemov
             <span>-Rp{new Intl.NumberFormat('id-ID').format(discountAmount)}</span>
           </div>
         )}
-        <div className="flex justify-between text-muted-foreground">
-          <span>Pajak (11%)</span>
-          <span>Rp{new Intl.NumberFormat('id-ID').format(tax)}</span>
-        </div>
         <Separator />
         <div className="flex justify-between font-bold text-lg">
           <span>Total</span>

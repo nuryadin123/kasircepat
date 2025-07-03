@@ -112,16 +112,14 @@ export default function SalesPage() {
       const selectedCustomer = customers.find(c => c.id === selectedCustomerId);
       const discountPercentage = selectedCustomer?.discount || 0;
       const discountAmount = subtotal * (discountPercentage / 100);
-      const discountedSubtotal = subtotal - discountAmount;
-      const tax = discountedSubtotal * 0.11;
-      const total = discountedSubtotal + tax;
+      const total = subtotal - discountAmount;
 
       const saleData = {
         date: serverTimestamp(),
         items: cart,
         subtotal: subtotal,
         discountAmount: discountAmount,
-        tax: tax,
+        tax: 0,
         total: total,
         paymentMethod: 'Card', // Hardcoded for now
         ...(selectedCustomer && { customer: selectedCustomer })
@@ -135,10 +133,10 @@ export default function SalesPage() {
           items: [...cart],
           subtotal,
           discountAmount,
-          tax,
+          tax: 0,
           total,
           paymentMethod: 'Card',
-          customer: selectedCustomer,
+          customer: selectedCustomer || undefined,
       };
       
       setLastSale(newSale);
@@ -164,9 +162,7 @@ export default function SalesPage() {
   const selectedCustomer = customers.find(c => c.id === selectedCustomerId);
   const discountPercentage = selectedCustomer?.discount || 0;
   const discountAmount = subtotal * (discountPercentage / 100);
-  const discountedSubtotal = subtotal - discountAmount;
-  const tax = discountedSubtotal * 0.11;
-  const total = discountedSubtotal + tax;
+  const total = subtotal - discountAmount;
 
   if (!hasMounted) {
     return (
