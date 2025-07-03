@@ -11,7 +11,7 @@ export function SalesChart({ data = [] }: SalesChartProps) {
   return (
     <Card className="col-span-4">
       <CardHeader>
-        <CardTitle className="font-headline">Ringkasan Penjualan</CardTitle>
+        <CardTitle className="font-headline text-lg sm:text-xl">Ringkasan Penjualan</CardTitle>
       </CardHeader>
       <CardContent className="pl-2">
         <ResponsiveContainer width="100%" height={350}>

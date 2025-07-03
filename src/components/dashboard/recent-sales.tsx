@@ -19,7 +19,7 @@ export function RecentSales({ sales = [] }: RecentSalesProps) {
   return (
     <Card className="col-span-3">
       <CardHeader>
-        <CardTitle className="font-headline">Penjualan Terkini</CardTitle>
+        <CardTitle className="font-headline text-lg sm:text-xl">Penjualan Terkini</CardTitle>
         <CardDescription>
           Menampilkan {sales.length} transaksi terakhir.
         </CardDescription>
