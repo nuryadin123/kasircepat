@@ -1,7 +1,7 @@
 'use client';
 
 import { Customer } from '@/types';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { CustomerActions } from './customer-actions';
 
 
@@ -12,7 +12,6 @@ export const columns = [
     cell: (row: Customer) => (
       <div className="flex items-center gap-2">
         <Avatar className="h-8 w-8">
-            <AvatarImage data-ai-hint="person avatar" src={`https://i.pravatar.cc/150?u=${row.email}`} alt={row.name} />
             <AvatarFallback>{row.name.substring(0, 2).toUpperCase()}</AvatarFallback>
         </Avatar>
         <span>{row.name}</span>

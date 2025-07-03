@@ -1,7 +1,6 @@
 import {
   Avatar,
   AvatarFallback,
-  AvatarImage,
 } from "@/components/ui/avatar"
 import {
   Card,
@@ -31,7 +30,6 @@ export function RecentSales({ sales = [] }: RecentSalesProps) {
             {sales.map(sale => (
               <div className="flex items-center" key={sale.id}>
                 <Avatar className="h-9 w-9">
-                  <AvatarImage data-ai-hint="person avatar" src={`https://i.pravatar.cc/150?u=${sale.id}`} alt="Avatar" />
                   <AvatarFallback>
                     {sale.items[0]?.name.substring(0,2).toUpperCase() || '??'}
                   </AvatarFallback>

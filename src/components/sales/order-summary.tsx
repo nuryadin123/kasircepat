@@ -5,7 +5,6 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Separator } from '@/components/ui/separator';
 import { SaleItem } from '@/types';
 import { X, MinusCircle, PlusCircle } from 'lucide-react';
-import Image from 'next/image';
 
 interface OrderSummaryProps {
   items: SaleItem[];
@@ -33,14 +32,6 @@ export function OrderSummary({ items, onItemRemove, onQuantityChange, onCheckout
         ) : (
           items.map((item) => (
             <div key={item.productId} className="flex items-center gap-4">
-               <Image
-                data-ai-hint="product image"
-                alt={item.name}
-                className="aspect-square w-16 h-16 rounded-md object-cover"
-                height="64"
-                src={`https://placehold.co/100x100.png`}
-                width="64"
-                />
               <div className="flex-1">
                 <p className="font-medium">{item.name}</p>
                 <div className="flex items-center gap-2 mt-1">
