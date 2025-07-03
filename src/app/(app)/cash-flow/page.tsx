@@ -25,10 +25,12 @@ async function getCashFlowData(): Promise<{
   ]);
 
   const salesEntries: CashFlowEntry[] = salesSnapshot.docs.map(doc => {
-    const data = doc.data() as Omit<Sale, 'id'>;
+    const data = doc.data();
+    // The data.date from firestore is a Timestamp object. It needs to be converted to a string.
+    const date = (data.date as any).toDate().toISOString(); 
     return { 
       id: doc.id,
-      date: data.date,
+      date: date,
       type: 'Pemasukan',
       description: `Penjualan ${data.transactionId || doc.id.substring(0,6).toUpperCase()}`,
       amount: data.total,
