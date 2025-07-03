@@ -42,3 +42,12 @@ export type User = {
   role: 'admin' | 'manager' | 'cashier';
   avatar: string;
 };
+
+export type CashFlowEntry = {
+    id: string;
+    date: string;
+    type: 'Pemasukan' | 'Pengeluaran';
+    description: string;
+    amount: number;
+    category: string;
+};
