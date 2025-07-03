@@ -13,7 +13,24 @@ export const columns = [
   {
     accessorKey: 'date',
     header: 'Tanggal',
-    cell: (row: Sale) => new Date(row.date).toLocaleString('id-ID'),
+    cell: (row: Sale) => {
+      const d = new Date(row.date);
+      const date = d.toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      });
+      const time = d.toLocaleTimeString('id-ID', {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      return (
+        <div>
+          <span>{date}</span>
+          <span className="block text-muted-foreground">{time}</span>
+        </div>
+      );
+    }
   },
   {
     accessorKey: 'customer',
