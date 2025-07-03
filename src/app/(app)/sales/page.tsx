@@ -10,7 +10,7 @@ import { ReceiptDialog } from '@/components/sales/receipt-dialog';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { ShoppingBag } from 'lucide-react';
 
@@ -157,6 +157,7 @@ export default function SalesPage() {
             </Button>
           </SheetTrigger>
           <SheetContent side="bottom" className="h-[90vh] flex flex-col p-0">
+            <SheetTitle className="sr-only">Ringkasan Pesanan</SheetTitle>
              <OrderSummary 
               items={cart}
               onItemRemove={handleItemRemove}
