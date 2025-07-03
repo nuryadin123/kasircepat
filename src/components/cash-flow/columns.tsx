@@ -1,31 +1,51 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { CashFlowEntry } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { CashFlowActions } from './cash-flow-actions';
+
+// This is a new client component to safely render dates and avoid hydration errors.
+const SafeDateCell = ({ isoDate }: { isoDate: string }) => {
+  const [formatted, setFormatted] = useState<{ date: string; time: string } | null>(null);
+
+  useEffect(() => {
+    // This code runs only on the client, after the initial render.
+    const d = new Date(isoDate);
+    const date = d.toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+    const time = d.toLocaleTimeString('id-ID', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+    setFormatted({ date, time });
+  }, [isoDate]);
+
+  // On the server, and during the initial client render, we show a placeholder.
+  if (!formatted) {
+    return <span>Memuat...</span>;
+  }
+
+  // After mounting, we can safely show the client-rendered date.
+  return (
+    <div>
+      <span>{formatted.date}</span>
+      <span className="block text-muted-foreground">{formatted.time}</span>
+    </div>
+  );
+};
+
 
 export const columns = [
   {
     accessorKey: 'date',
     header: 'Tanggal',
     cell: (row: CashFlowEntry) => {
-      const d = new Date(row.date);
-      const date = d.toLocaleDateString('id-ID', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      });
-      const time = d.toLocaleTimeString('id-ID', {
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-      return (
-        <div>
-          <span>{date}</span>
-          <span className="block text-muted-foreground">{time}</span>
-        </div>
-      );
+      return <SafeDateCell isoDate={row.date} />;
     }
   },
   {
