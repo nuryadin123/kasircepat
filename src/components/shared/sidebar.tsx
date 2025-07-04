@@ -86,25 +86,27 @@ export function Sidebar() {
           ))}
         </TooltipProvider>
       </nav>
-      <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link
-                href="/settings"
-                className={cn(
-                  'flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8',
-                   pathname === '/settings' && 'bg-accent text-accent-foreground'
-                )}
-              >
-                <Settings className="h-5 w-5" />
-                <span className="sr-only">Pengaturan</span>
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent side="right">Pengaturan</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </nav>
+      {userRole === 'admin' && (
+        <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  href="/settings"
+                  className={cn(
+                    'flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8',
+                    pathname === '/settings' && 'bg-accent text-accent-foreground'
+                  )}
+                >
+                  <Settings className="h-5 w-5" />
+                  <span className="sr-only">Pengaturan</span>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">Pengaturan</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </nav>
+      )}
     </aside>
   );
 }
