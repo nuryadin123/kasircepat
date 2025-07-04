@@ -1,11 +1,16 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { SaleItem } from '@/types';
-import { X, MinusCircle, PlusCircle } from 'lucide-react';
+import { X, MinusCircle, PlusCircle, Calendar as CalendarIcon, User } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { id as indonesiaLocale } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 type CartItemWithId = SaleItem & { cartId: string };
 
@@ -16,9 +21,22 @@ interface OrderSummaryProps {
   onCheckout: () => void;
   discountPercentage: number;
   isEditing?: boolean;
+  transactionDate: Date;
+  onDateChange: (date: Date) => void;
+  cashierName: string;
 }
 
-export function OrderSummary({ items, onItemRemove, onQuantityChange, onCheckout, discountPercentage, isEditing }: OrderSummaryProps) {
+export function OrderSummary({ 
+  items, 
+  onItemRemove, 
+  onQuantityChange, 
+  onCheckout, 
+  discountPercentage, 
+  isEditing,
+  transactionDate,
+  onDateChange,
+  cashierName
+}: OrderSummaryProps) {
   const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const discountAmount = subtotal * (discountPercentage / 100);
   const total = subtotal - discountAmount;
@@ -26,9 +44,39 @@ export function OrderSummary({ items, onItemRemove, onQuantityChange, onCheckout
   return (
     <Card className="h-full flex flex-col md:rounded-lg">
       <CardHeader>
-        <CardTitle className="font-headline">Pesanan Saat Ini</CardTitle>
+        <div className="flex justify-between items-start">
+            <div>
+                <CardTitle className="font-headline">Pesanan Saat Ini</CardTitle>
+                <CardDescription className="flex items-center gap-2 mt-1">
+                    <User className="h-4 w-4" />
+                    {cashierName}
+                </CardDescription>
+            </div>
+            <Popover>
+                <PopoverTrigger asChild>
+                    <Button
+                        variant={"outline"}
+                        className={cn(
+                            "w-[240px] justify-start text-left font-normal",
+                            !transactionDate && "text-muted-foreground"
+                        )}
+                    >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {transactionDate ? format(transactionDate, "PPP", { locale: indonesiaLocale }) : <span>Pilih tanggal</span>}
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                    <Calendar
+                        mode="single"
+                        selected={transactionDate}
+                        onSelect={(date) => date && onDateChange(date)}
+                        initialFocus
+                    />
+                </PopoverContent>
+            </Popover>
+        </div>
       </CardHeader>
-      <CardContent className="flex-grow p-6 overflow-y-auto">
+      <CardContent className="flex-grow p-6 pt-2 overflow-y-auto">
         <div className="space-y-4">
           {items.length === 0 ? (
             <p className="text-center text-muted-foreground py-10">

@@ -28,10 +28,17 @@ function SalesPageContent() {
   const [hasMounted, setHasMounted] = useState(false);
   const [editingSaleId, setEditingSaleId] = useState<string | null>(null);
   const [isLoadingSale, setIsLoadingSale] = useState(false);
+  const [transactionDate, setTransactionDate] = useState(new Date());
+  const [cashier, setCashier] = useState<{ id: string; name: string } | null>(null);
 
 
   useEffect(() => {
     setHasMounted(true);
+    const cashierId = localStorage.getItem('userUID');
+    const cashierName = localStorage.getItem('userName');
+    if (cashierId && cashierName) {
+      setCashier({ id: cashierId, name: cashierName });
+    }
   }, []);
 
   useEffect(() => {
@@ -51,7 +58,6 @@ function SalesPageContent() {
   useEffect(() => {
     const fetchAndSortProducts = async () => {
       try {
-        // 1. Fetch all products and all sales in parallel
         const productsCol = collection(db, 'products');
         const salesCol = collection(db, 'sales');
         
@@ -63,7 +69,6 @@ function SalesPageContent() {
         const productList = productSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
         const salesList: Sale[] = salesSnapshot.docs.map(doc => doc.data() as Sale);
 
-        // 2. Calculate total quantity sold for each product
         const salesCount: { [productId: string]: number } = {};
         salesList.forEach(sale => {
             if (sale.items && Array.isArray(sale.items)) {
@@ -73,14 +78,12 @@ function SalesPageContent() {
             }
         });
 
-        // 3. Add sales count to each product and sort
         const sortedProducts = productList
             .map(product => ({
                 ...product,
                 totalSold: salesCount[product.id] || 0
             }))
             .sort((a, b) => {
-                // Sort by totalSold descending, then by name ascending
                 if (b.totalSold !== a.totalSold) {
                     return b.totalSold - a.totalSold;
                 }
@@ -113,10 +116,15 @@ function SalesPageContent() {
             const saleData = { id: saleSnap.id, ...saleSnap.data() } as Sale;
             const cartItemsWithId = saleData.items.map((item) => ({
                 ...item,
-                cartId: (item as any).cartId || crypto.randomUUID(),
+                cartId: crypto.randomUUID(),
             }));
             setCart(cartItemsWithId);
             setEditingSaleId(saleId);
+            setTransactionDate(new Date(saleData.date)); // Set the date from the existing sale
+            // Update cashier info from the sale, if it exists
+            if (saleData.cashierId && saleData.cashierName) {
+              setCashier({ id: saleData.cashierId, name: saleData.cashierName });
+            }
           } else {
             toast({ title: 'Error', description: 'Transaksi penjualan tidak ditemukan.', variant: 'destructive' });
             router.push('/reports');
@@ -133,12 +141,13 @@ function SalesPageContent() {
         // If there's no edit id, reset to new sale mode
         setCart([]);
         setEditingSaleId(null);
+        setTransactionDate(new Date()); // Reset to current date
     }
   }, [searchParams, router, toast]);
 
   const handleProductSelect = (product: Product) => {
     setCart((prevCart) => {
-      return [
+      const newCart = [
         ...prevCart,
         {
           cartId: crypto.randomUUID(),
@@ -149,6 +158,7 @@ function SalesPageContent() {
           cost: product.cost,
         },
       ];
+      return newCart;
     });
   };
 
@@ -177,42 +187,20 @@ function SalesPageContent() {
         // Update logic
         try {
             const saleRef = doc(db, 'sales', editingSaleId);
-
-            // --- PRE-TRANSACTION READS ---
-            const initialSaleSnap = await getDoc(saleRef);
-            if (!initialSaleSnap.exists()) {
-                throw new Error("Sale document to edit was not found.");
-            }
-            const transactionId = initialSaleSnap.data().transactionId;
-
-            // Find the COGS document outside the transaction to avoid the query issue
-            let cogsDocId: string | null = null;
-            if (transactionId) {
-                const cogsQuery = query(
-                    collection(db, 'cash-flow'), 
-                    where('description', '==', `Biaya Pokok Penjualan ${transactionId}`)
-                );
-                const cogsQuerySnapshot = await getDocs(cogsQuery);
-                if (!cogsQuerySnapshot.empty) {
-                    cogsDocId = cogsQuerySnapshot.docs[0].id;
-                }
-            }
             
-            // --- TRANSACTION ---
             await runTransaction(db, async (transaction) => {
-                // --- READ PHASE (within transaction) ---
-                // Re-read sale document for consistency
                 const saleSnap = await transaction.get(saleRef);
                 if (!saleSnap.exists()) {
                     throw new Error("Sale document not found during transaction.");
                 }
+                const existingSaleData = saleSnap.data();
+                const transactionId = existingSaleData.transactionId;
 
-                // --- WRITE PHASE (within transaction) ---
                 const subtotal = itemsToSave.reduce((acc, item) => acc + item.price * item.quantity, 0);
                 const discountAmount = subtotal * (discountPercentage / 100);
                 const total = subtotal - discountAmount;
                 const totalCost = itemsToSave.reduce((acc, item) => acc + (item.cost || 0) * item.quantity, 0);
-                const writeTime = new Date();
+                const writeTime = transactionDate;
 
                 // 1. Update the sale document
                 transaction.update(saleRef, { 
@@ -220,28 +208,35 @@ function SalesPageContent() {
                     subtotal, 
                     discountAmount, 
                     total, 
-                    date: writeTime 
+                    date: writeTime,
+                    // Note: We don't update the cashier on edit to preserve the original transaction record
                 });
 
-                // 2. Update, create, or delete the COGS cash-flow entry
-                if (cogsDocId) { // Old COGS entry exists
-                    const cogsDocRef = doc(db, 'cash-flow', cogsDocId);
-                    if (totalCost > 0) {
-                        // Update it with the new cost
-                        transaction.update(cogsDocRef, { amount: totalCost, date: writeTime });
-                    } else {
-                        // The new cost is 0, so delete the old entry
-                        transaction.delete(cogsDocRef);
+                // 2. Update or delete the COGS cash-flow entry
+                if (transactionId) {
+                    const cogsQuery = query(
+                        collection(db, 'cash-flow'), 
+                        where('description', '==', `Biaya Pokok Penjualan ${transactionId}`)
+                    );
+                    const cogsQuerySnapshot = await getDocs(cogsQuery);
+                    
+                    if (!cogsQuerySnapshot.empty) {
+                        const cogsDocRef = cogsQuerySnapshot.docs[0].ref;
+                        if (totalCost > 0) {
+                            transaction.update(cogsDocRef, { amount: totalCost, date: writeTime });
+                        } else {
+                            transaction.delete(cogsDocRef);
+                        }
+                    } else if (totalCost > 0) { // Old entry not found, but a new one is needed
+                         const newExpenseRef = doc(collection(db, 'cash-flow'));
+                         transaction.set(newExpenseRef, {
+                            date: writeTime,
+                            type: 'Pengeluaran',
+                            description: `Biaya Pokok Penjualan ${transactionId}`,
+                            amount: totalCost,
+                            category: 'Biaya Pokok Penjualan',
+                        });
                     }
-                } else if (transactionId && totalCost > 0) { // No old entry, but a new one is needed
-                    const newExpenseRef = doc(collection(db, 'cash-flow'));
-                    transaction.set(newExpenseRef, {
-                        date: writeTime,
-                        type: 'Pengeluaran',
-                        description: `Biaya Pokok Penjualan ${transactionId}`,
-                        amount: totalCost,
-                        category: 'Biaya Pokok Penjualan',
-                    });
                 }
             });
 
@@ -258,6 +253,9 @@ function SalesPageContent() {
     } else {
         // Create Logic
          try {
+            if (!cashier) {
+                throw new Error("Informasi kasir tidak ditemukan.");
+            }
             const newSale = await runTransaction(db, async (transaction) => {
                 const counterRef = doc(db, 'counters', 'sales');
                 const counterDoc = await transaction.get(counterRef);
@@ -276,19 +274,21 @@ function SalesPageContent() {
                 const newSaleRef = doc(collection(db, "sales"));
                 const saleData = {
                     transactionId: formattedTransactionId,
-                    date: new Date(),
+                    date: transactionDate,
                     items: itemsToSave,
                     subtotal,
                     discountAmount,
                     total,
                     paymentMethod: 'Card' as const,
+                    cashierId: cashier.id,
+                    cashierName: cashier.name,
                 };
                 transaction.set(newSaleRef, saleData);
                 
                 if (totalCost > 0) {
                     const expenseRef = doc(collection(db, 'cash-flow'));
                     const expenseData = {
-                        date: new Date(),
+                        date: transactionDate,
                         type: 'Pengeluaran',
                         description: `Biaya Pokok Penjualan ${formattedTransactionId}`,
                         amount: totalCost,
@@ -313,13 +313,13 @@ function SalesPageContent() {
                 title: "Transaksi Berhasil",
                 description: "Penjualan telah berhasil diproses.",
             });
-        } catch (error) {
-        console.error("Error processing transaction: ", error);
-        toast({
-            title: "Transaksi Gagal",
-            description: "Terjadi kesalahan saat memproses penjualan.",
-            variant: "destructive",
-        });
+        } catch (error: any) {
+            console.error("Error processing transaction: ", error);
+            toast({
+                title: "Transaksi Gagal",
+                description: `Terjadi kesalahan saat memproses penjualan: ${error.message}`,
+                variant: "destructive",
+            });
         }
     }
   };
@@ -351,6 +351,9 @@ function SalesPageContent() {
               onCheckout={handleCheckout}
               discountPercentage={discountPercentage}
               isEditing={!!editingSaleId}
+              transactionDate={transactionDate}
+              onDateChange={setTransactionDate}
+              cashierName={cashier?.name || 'Kasir'}
             />
         )}
       </div>

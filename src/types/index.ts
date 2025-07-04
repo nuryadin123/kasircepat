@@ -25,6 +25,8 @@ export type Sale = {
   subtotal?: number;
   discountAmount?: number;
   tax?: number;
+  cashierId: string;
+  cashierName: string;
 };
 
 export type User = {

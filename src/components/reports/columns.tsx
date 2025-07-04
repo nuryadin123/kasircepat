@@ -63,6 +63,11 @@ export const columns = [
     ),
   },
   {
+    accessorKey: 'cashierName',
+    header: 'Kasir',
+    cell: (row: Sale) => row.cashierName || 'N/A',
+  },
+  {
     accessorKey: 'total',
     header: 'Total',
     cell: (row: Sale) => `Rp${new Intl.NumberFormat('id-ID').format(row.total)}`,
