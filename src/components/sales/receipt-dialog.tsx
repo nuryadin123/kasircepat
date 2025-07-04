@@ -50,8 +50,8 @@ export function ReceiptDialog({ isOpen, onClose, sale }: ReceiptDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-xs">
-        <div id="printable-receipt">
-          <DialogHeader className="print:hidden">
+        <div id="printable-receipt" className="print:text-black print:bg-white">
+          <DialogHeader>
             <DialogTitle className="font-headline text-center">Struk Pembelian</DialogTitle>
             <DialogDescription className="text-center">
               Terima kasih atas pembelian Anda.
@@ -60,50 +60,50 @@ export function ReceiptDialog({ isOpen, onClose, sale }: ReceiptDialogProps) {
           <div className="py-2 font-mono text-sm">
               <div className="space-y-2">
                   <div className="text-center">
-                      <p className="font-bold text-foreground">{storeName}</p>
-                      {storeAddress && <p className="text-xs text-muted-foreground">{storeAddress}</p>}
-                      <p className="text-xs text-muted-foreground">{new Date(sale.date).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short'})}</p>
-                      <p className="text-xs text-muted-foreground truncate">No: {sale.transactionId || sale.id}</p>
+                      <p className="font-bold text-foreground print:text-black">{storeName}</p>
+                      {storeAddress && <p className="text-xs text-muted-foreground print:text-black">{storeAddress}</p>}
+                      <p className="text-xs text-muted-foreground print:text-black">{new Date(sale.date).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short'})}</p>
+                      <p className="text-xs text-muted-foreground print:text-black truncate">No: {sale.transactionId || sale.id}</p>
                   </div>
                   <Separator className="my-2 border-dashed" />
                   <div className="space-y-2">
-                      {sale.items.map((item) => (
-                          <div key={item.productId} className="flex">
+                      {sale.items.map((item, index) => (
+                          <div key={`${item.productId}-${index}`} className="flex">
                               <div className="flex-1">
-                                  <p className="font-medium text-foreground">{item.name}</p>
-                                  <p className="text-muted-foreground">
+                                  <p className="font-medium text-foreground print:text-black">{item.name}</p>
+                                  <p className="text-muted-foreground print:text-black">
                                       {item.quantity} x Rp{new Intl.NumberFormat('id-ID').format(item.price)}
                                   </p>
                               </div>
-                              <p className="text-foreground">Rp{new Intl.NumberFormat('id-ID').format(item.price * item.quantity)}</p>
+                              <p className="text-foreground print:text-black">Rp{new Intl.NumberFormat('id-ID').format(item.price * item.quantity)}</p>
                           </div>
                       ))}
                   </div>
                   <Separator className="my-2 border-dashed" />
                    <div className="space-y-1">
                       <div className="flex justify-between">
-                          <p className="text-muted-foreground">Subtotal</p>
-                          <p className="text-foreground">Rp{new Intl.NumberFormat('id-ID').format(subtotal)}</p>
+                          <p className="text-muted-foreground print:text-black">Subtotal</p>
+                          <p className="text-foreground print:text-black">Rp{new Intl.NumberFormat('id-ID').format(subtotal)}</p>
                       </div>
                       {discountAmount > 0 && (
                         <div className="flex justify-between">
-                            <p className="text-muted-foreground">Diskon</p>
-                            <p className="text-foreground">-Rp{new Intl.NumberFormat('id-ID').format(discountAmount)}</p>
+                            <p className="text-muted-foreground print:text-black">Diskon</p>
+                            <p className="text-foreground print:text-black">-Rp{new Intl.NumberFormat('id-ID').format(discountAmount)}</p>
                         </div>
                       )}
                   </div>
                   <Separator className="my-2 border-dashed" />
                   <div className="flex justify-between font-bold text-base">
-                      <p className="text-foreground">Total</p>
-                      <p className="text-foreground">Rp{new Intl.NumberFormat('id-ID').format(total)}</p>
+                      <p className="text-foreground print:text-black">Total</p>
+                      <p className="text-foreground print:text-black">Rp{new Intl.NumberFormat('id-ID').format(total)}</p>
                   </div>
                   <div className="text-center mt-4 text-xs">
-                      <p className="text-muted-foreground">--- Terima Kasih ---</p>
+                      <p className="text-muted-foreground print:text-black">--- Terima Kasih ---</p>
                   </div>
               </div>
           </div>
         </div>
-        <DialogFooter className="flex-col gap-2 pt-4 print:hidden">
+        <DialogFooter className="flex-col gap-2 pt-4">
           <Button type="button" variant="outline" onClick={onClose} className="w-full">
             Tutup
           </Button>

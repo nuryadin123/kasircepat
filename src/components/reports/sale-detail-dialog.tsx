@@ -46,8 +46,8 @@ export function SaleDetailDialog({ sale, children }: SaleDetailDialogProps) {
           <Separator />
           <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
             <h4 className="font-medium">Item yang dibeli:</h4>
-            {sale.items.map((item) => (
-              <div key={item.productId} className="flex justify-between items-center text-sm">
+            {sale.items.map((item, index) => (
+              <div key={`${item.productId}-${index}`} className="flex justify-between items-center text-sm">
                 <div>
                   <p className="font-medium">{item.name}</p>
                   <p className="text-muted-foreground">
