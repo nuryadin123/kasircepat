@@ -23,9 +23,10 @@ import { CashFlowFormDialog } from './cash-flow-form-dialog';
 
 interface CashFlowActionsProps {
   entry: CashFlowEntry;
+  allExpenseDescriptions: string[];
 }
 
-export function CashFlowActions({ entry }: CashFlowActionsProps) {
+export function CashFlowActions({ entry, allExpenseDescriptions }: CashFlowActionsProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const router = useRouter();
@@ -53,7 +54,7 @@ export function CashFlowActions({ entry }: CashFlowActionsProps) {
   return (
     <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
       <div className="flex items-center gap-1 justify-end">
-        <CashFlowFormDialog entry={entry} type={entry.type}>
+        <CashFlowFormDialog entry={entry} type={entry.type} expenseDescriptions={allExpenseDescriptions}>
           <Button variant="ghost" size="icon" className="h-8 w-8">
             <Pencil className="h-4 w-4" />
             <span className="sr-only">Edit</span>

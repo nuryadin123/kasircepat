@@ -69,7 +69,6 @@ export const columns = [
     cell: (row: CashFlowEntry) => (
       <div>
         <p className="font-medium">{row.description}</p>
-        <p className="text-sm text-muted-foreground">{row.category}</p>
       </div>
     ),
   },
@@ -90,9 +89,9 @@ export const columns = [
   },
 ];
 
-export const cashFlowTableActions = (row: CashFlowEntry) => {
-  if (row.category === 'Penjualan' || row.category === 'Biaya Pokok Penjualan') {
+export const cashFlowTableActions = (allExpenseDescriptions: string[]) => (row: CashFlowEntry) => {
+  if (row.description.startsWith('Penjualan') || row.description.startsWith('Biaya Pokok Penjualan')) {
     return null;
   }
-  return <CashFlowActions entry={row} />;
+  return <CashFlowActions entry={row} allExpenseDescriptions={allExpenseDescriptions} />;
 };

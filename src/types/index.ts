@@ -41,5 +41,4 @@ export type CashFlowEntry = {
     type: 'Pemasukan' | 'Pengeluaran';
     description: string;
     amount: number;
-    category: string;
 };

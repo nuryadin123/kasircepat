@@ -13,7 +13,8 @@ async function getCashFlowData(): Promise<{
     entries: CashFlowEntry[],
     totalIncome: number,
     totalExpense: number,
-    netCashFlow: number
+    netCashFlow: number,
+    expenseDescriptions: string[]
 }> {
   const salesCol = query(collection(db, 'sales'), orderBy('date', 'desc'));
   const cashFlowCol = query(collection(db, 'cash-flow'), orderBy('date', 'desc'));
@@ -33,7 +34,6 @@ async function getCashFlowData(): Promise<{
       type: 'Pemasukan',
       description: `Penjualan ${data.transactionId || doc.id.substring(0,6).toUpperCase()}`,
       amount: data.total,
-      category: 'Penjualan'
     } as CashFlowEntry;
   });
 
@@ -56,12 +56,16 @@ async function getCashFlowData(): Promise<{
 
   const netCashFlow = totalIncome - totalExpense;
 
-  return { entries: allEntries, totalIncome, totalExpense, netCashFlow };
+  const expenseDescriptions = manualEntries
+    .filter(e => e.type === 'Pengeluaran')
+    .map(e => e.description);
+
+  return { entries: allEntries, totalIncome, totalExpense, netCashFlow, expenseDescriptions };
 }
 
 
 export default async function CashFlowPage() {
-  const { entries, totalIncome, totalExpense, netCashFlow } = await getCashFlowData();
+  const { entries, totalIncome, totalExpense, netCashFlow, expenseDescriptions } = await getCashFlowData();
 
   return (
     <>
@@ -75,7 +79,7 @@ export default async function CashFlowPage() {
                     Pemasukan
                 </Button>
             </CashFlowFormDialog>
-            <CashFlowFormDialog type="Pengeluaran">
+            <CashFlowFormDialog type="Pengeluaran" expenseDescriptions={expenseDescriptions}>
                 <Button variant="outline" className="w-full">
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Pengeluaran
@@ -104,7 +108,7 @@ export default async function CashFlowPage() {
           />
       </div>
       <div className="mt-4">
-        <DataTable columns={columns} data={entries} actions={cashFlowTableActions} />
+        <DataTable columns={columns} data={entries} actions={cashFlowTableActions(expenseDescriptions)} />
       </div>
     </>
   );

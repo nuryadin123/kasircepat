@@ -28,11 +28,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import type { CashFlowEntry } from '@/types';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Sparkles } from 'lucide-react';
+import { suggestExpenses } from '@/ai/flows/suggest-expense-flow';
 
 const formSchema = z.object({
   description: z.string().min(1, { message: 'Deskripsi tidak boleh kosong.' }),
-  category: z.string().min(1, { message: 'Kategori tidak boleh kosong.' }),
   amount: z.coerce.number().positive({ message: 'Jumlah harus lebih dari 0.' }),
 });
 
@@ -42,23 +42,24 @@ interface CashFlowFormDialogProps {
   entry?: CashFlowEntry;
   type: 'Pemasukan' | 'Pengeluaran';
   children: React.ReactNode;
+  expenseDescriptions?: string[];
 }
 
-export function CashFlowFormDialog({ entry, type, children }: CashFlowFormDialogProps) {
+export function CashFlowFormDialog({ entry, type, children, expenseDescriptions = [] }: CashFlowFormDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  const [isSuggesting, setIsSuggesting] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: entry ? {
       description: entry.description,
-      category: entry.category,
       amount: entry.amount,
     } : {
       description: '',
-      category: '',
       amount: 0,
     },
   });
@@ -90,6 +91,34 @@ export function CashFlowFormDialog({ entry, type, children }: CashFlowFormDialog
     }
   };
 
+  const handleGetSuggestions = async () => {
+    setIsSuggesting(true);
+    setSuggestions([]);
+    try {
+      const result = await suggestExpenses({
+        existingExpenses: expenseDescriptions,
+        query: form.getValues('description'),
+      });
+      if (result.suggestions) {
+        setSuggestions(result.suggestions);
+      }
+    } catch (error) {
+      console.error('Error getting suggestions:', error);
+      toast({
+        title: 'Gagal Mendapatkan Saran',
+        description: 'Terjadi kesalahan saat berkomunikasi dengan AI.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSuggesting(false);
+    }
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    form.setValue('description', suggestion, { shouldValidate: true });
+    setSuggestions([]);
+  };
+
   const title = entry ? `Edit ${type}` : `Tambah ${type}`;
   const description = entry ? 'Ubah detail di bawah ini.' : `Isi formulir untuk menambahkan ${type} baru.`;
 
@@ -109,26 +138,40 @@ export function CashFlowFormDialog({ entry, type, children }: CashFlowFormDialog
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Deskripsi</FormLabel>
-                  <FormControl>
-                    <Input placeholder={type === 'Pemasukan' ? 'cth. Modal Awal' : 'cth. Beli Bahan Baku'} {...field} />
-                  </FormControl>
+                   <div className="flex items-center gap-2">
+                    <FormControl>
+                      <Input placeholder={type === 'Pemasukan' ? 'cth. Modal Awal' : 'cth. Beli Bahan Baku'} {...field} />
+                    </FormControl>
+                    {type === 'Pengeluaran' && (
+                        <Button type="button" variant="outline" size="icon" onClick={handleGetSuggestions} disabled={isSuggesting}>
+                            {isSuggesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                            <span className="sr-only">Dapatkan Saran</span>
+                        </Button>
+                    )}
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="category"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Kategori</FormLabel>
-                  <FormControl>
-                    <Input placeholder={type === 'Pemasukan' ? 'cth. Operasional' : 'cth. Biaya Pokok'} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {suggestions.length > 0 && (
+              <div className="p-2 border rounded-md bg-muted/50">
+                  <p className="text-xs font-medium text-muted-foreground mb-2">Saran deskripsi:</p>
+                  <div className="flex flex-wrap gap-2">
+                      {suggestions.map((suggestion, index) => (
+                          <Button 
+                              key={index} 
+                              type="button" 
+                              variant="secondary" 
+                              size="sm" 
+                              className="text-xs h-auto py-1 px-2"
+                              onClick={() => handleSuggestionClick(suggestion)}
+                          >
+                              {suggestion}
+                          </Button>
+                      ))}
+                  </div>
+              </div>
+            )}
              <FormField
               control={form.control}
               name="amount"
