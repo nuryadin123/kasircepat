@@ -146,22 +146,31 @@ function SalesPageContent() {
     if (editingSaleId) {
         // Update logic
         try {
+            // PRE-TRANSACTION READ: Get the transactionId beforehand.
+            // The transaction itself will re-validate the sale data's consistency.
+            const saleRefForId = doc(db, 'sales', editingSaleId);
+            const initialSaleSnap = await getDoc(saleRefForId);
+            if (!initialSaleSnap.exists()) {
+                throw new Error("Sale document to edit was not found.");
+            }
+            const transactionId = initialSaleSnap.data().transactionId;
+
             await runTransaction(db, async (transaction) => {
                 const saleRef = doc(db, 'sales', editingSaleId);
                 
                 // --- READ PHASE ---
+                // 1. Read the sale document to ensure it hasn't been deleted and for consistency.
                 const saleSnap = await transaction.get(saleRef);
                 if (!saleSnap.exists()) {
-                    throw new Error("Sale document not found.");
+                    throw new Error("Sale document not found during transaction.");
                 }
-                const originalSaleData = saleSnap.data();
-
+                
+                // 2. Find the existing COGS entry using the transactionId read before the transaction.
                 let cogsDocRef: DocumentReference | null = null;
-                // Only query if there's a transaction ID
-                if (originalSaleData.transactionId) {
+                if (transactionId) {
                     const cogsQuery = query(
                         collection(db, 'cash-flow'), 
-                        where('description', '==', `Biaya Pokok Penjualan ${originalSaleData.transactionId}`)
+                        where('description', '==', `Biaya Pokok Penjualan ${transactionId}`)
                     );
                     const cogsSnap = await transaction.get(cogsQuery);
                     if (!cogsSnap.empty) {
@@ -194,12 +203,12 @@ function SalesPageContent() {
                         // The new cost is 0, so delete the old entry
                         transaction.delete(cogsDocRef);
                     }
-                } else if (originalSaleData.transactionId && totalCost > 0) { // No old entry, but a new one is needed
+                } else if (transactionId && totalCost > 0) { // No old entry, but a new one is needed
                     const newExpenseRef = doc(collection(db, 'cash-flow'));
                     transaction.set(newExpenseRef, {
                         date: writeTime,
                         type: 'Pengeluaran',
-                        description: `Biaya Pokok Penjualan ${originalSaleData.transactionId}`,
+                        description: `Biaya Pokok Penjualan ${transactionId}`,
                         amount: totalCost,
                         category: 'Biaya Pokok Penjualan',
                     });
