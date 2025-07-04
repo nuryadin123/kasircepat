@@ -22,11 +22,6 @@ export const columns = [
     accessorKey: 'stock',
     header: 'Stok',
   },
-  {
-    accessorKey: 'createdAt',
-    header: 'Tanggal Dibuat',
-    cell: (row: Product) => new Date(row.createdAt as string).toLocaleDateString('id-ID'),
-  },
 ];
 
 export const productActions = (row: Product) => (
