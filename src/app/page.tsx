@@ -3,10 +3,26 @@
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Terminal } from 'lucide-react';
+import { Loader2, Terminal } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 export default function RoleSelectionPage() {
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const userRole = localStorage.getItem('userRole');
+    if (userRole) {
+      if (userRole === 'admin') {
+        router.replace('/dashboard');
+      } else if (userRole === 'cashier') {
+        router.replace('/sales');
+      }
+    } else {
+      setIsLoading(false); // Only show the page if no role is found
+    }
+  }, [router]);
+
 
   const handleLogin = (role: 'admin' | 'cashier') => {
     if (typeof window !== 'undefined') {
@@ -18,6 +34,14 @@ export default function RoleSelectionPage() {
       }
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-muted/40">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-muted/40">
