@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { ArrowDownLeft, ArrowUpRight, PlusCircle, Scale, Loader2, Trash2 } from 'lucide-react';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, orderBy, query, writeBatch } from 'firebase/firestore';
+import { collection, getDocs, orderBy, query, writeBatch, doc } from 'firebase/firestore';
 import type { CashFlowEntry } from '@/types';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { CashFlowFormDialog } from '@/components/cash-flow/cash-flow-form-dialog';
@@ -96,32 +96,48 @@ export default function CashFlowPage() {
     }
 
     getCashFlowData();
-  }, []);
+  }, [router]);
   
   const handleDeleteAllEntries = async () => {
     setIsDeletingAll(true);
     try {
       const cashFlowCol = collection(db, 'cash-flow');
-      const cashFlowSnapshot = await getDocs(cashFlowCol);
-      if (cashFlowSnapshot.empty) {
-        toast({ title: 'Tidak Ada Entri', description: 'Tidak ada entri arus kas manual untuk dihapus.' });
+      const salesCol = collection(db, 'sales');
+
+      const [cashFlowSnapshot, salesSnapshot] = await Promise.all([
+          getDocs(cashFlowCol),
+          getDocs(salesCol),
+      ]);
+      
+      if (cashFlowSnapshot.empty && salesSnapshot.empty) {
+        toast({ title: 'Tidak Ada Data', description: 'Tidak ada riwayat penjualan atau arus kas untuk dihapus.' });
+        setIsDeletingAll(false);
         return;
       }
 
       const batch = writeBatch(db);
+      
       cashFlowSnapshot.forEach((doc) => {
         batch.delete(doc.ref);
       });
+      
+      salesSnapshot.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+      
+      // Also reset the sales counter
+      const counterRef = doc(db, 'counters', 'sales');
+      batch.set(counterRef, { lastNumber: 0 });
 
       await batch.commit();
 
-      toast({ title: 'Sukses', description: 'Semua entri arus kas manual berhasil dihapus.' });
+      toast({ title: 'Sukses', description: 'Semua riwayat penjualan dan data arus kas berhasil dihapus.' });
       router.refresh();
     } catch (error) {
-      console.error("Failed to delete all manual cash flow entries:", error);
+      console.error("Failed to delete all sales and cash flow entries:", error);
       toast({
         title: 'Error',
-        description: 'Gagal menghapus semua entri arus kas manual.',
+        description: 'Gagal menghapus semua riwayat penjualan dan arus kas.',
         variant: 'destructive',
       });
     } finally {
@@ -177,7 +193,7 @@ export default function CashFlowPage() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Apakah Anda benar-benar yakin?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Tindakan ini akan menghapus SEMUA entri arus kas manual (pemasukan dan pengeluaran yang Anda catat sendiri). Entri yang dibuat secara otomatis dari penjualan tidak akan terpengaruh. Aksi ini tidak dapat dibatalkan.
+                    Tindakan ini akan menghapus SEMUA riwayat penjualan dan data arus kas (termasuk yang dibuat otomatis). Aksi ini tidak dapat dibatalkan.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
