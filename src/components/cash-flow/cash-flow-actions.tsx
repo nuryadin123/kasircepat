@@ -7,13 +7,6 @@ import { db } from '@/lib/firebase';
 import type { CashFlowEntry } from '@/types';
 import { Button } from '@/components/ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -22,6 +15,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { MoreHorizontal, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -42,7 +36,6 @@ export function CashFlowActions({ entry }: CashFlowActionsProps) {
     try {
       await deleteDoc(doc(db, 'cash-flow', entry.id));
       toast({ title: 'Sukses', description: 'Data arus kas berhasil dihapus.' });
-      setIsAlertOpen(false);
       router.refresh();
     } catch (error) {
       console.error('Error deleting cash flow entry:', error);
@@ -53,32 +46,26 @@ export function CashFlowActions({ entry }: CashFlowActionsProps) {
       });
     } finally {
       setIsDeleting(false);
+      setIsAlertOpen(false);
     }
   };
 
   return (
     <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0">
-            <span className="sr-only">Buka menu</span>
-            <MoreHorizontal className="h-4 w-4" />
+      <div className="flex items-center gap-1 justify-end">
+        <CashFlowFormDialog entry={entry} type={entry.type}>
+          <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Pencil className="h-4 w-4" />
+            <span className="sr-only">Edit</span>
           </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <CashFlowFormDialog entry={entry} type={entry.type}>
-             <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                <Pencil className="mr-2 h-4 w-4" />
-                Edit
-             </DropdownMenuItem>
-          </CashFlowFormDialog>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem className="text-destructive" onSelect={() => setIsAlertOpen(true)}>
-            <Trash2 className="mr-2 h-4 w-4" />
-            Hapus
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+        </CashFlowFormDialog>
+        <AlertDialogTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+            <Trash2 className="h-4 w-4" />
+            <span className="sr-only">Hapus</span>
+          </Button>
+        </AlertDialogTrigger>
+      </div>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Apakah Anda yakin?</AlertDialogTitle>
@@ -87,7 +74,7 @@ export function CashFlowActions({ entry }: CashFlowActionsProps) {
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Batal</AlertDialogCancel>
+          <AlertDialogCancel disabled={isDeleting}>Batal</AlertDialogCancel>
           <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-destructive hover:bg-destructive/90">
              {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Hapus

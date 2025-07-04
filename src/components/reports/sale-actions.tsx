@@ -7,12 +7,6 @@ import { db } from '@/lib/firebase';
 import type { Sale } from '@/types';
 import { Button } from '@/components/ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -23,7 +17,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { MoreHorizontal, Trash2, Loader2 } from 'lucide-react';
+import { Trash2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface SaleActionsProps {
@@ -32,6 +26,7 @@ interface SaleActionsProps {
 
 export function SaleActions({ sale }: SaleActionsProps) {
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
@@ -50,27 +45,18 @@ export function SaleActions({ sale }: SaleActionsProps) {
       });
     } finally {
       setIsDeleting(false);
+      setIsAlertOpen(false);
     }
   };
 
   return (
-    <AlertDialog>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0">
-            <span className="sr-only">Buka menu</span>
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <AlertDialogTrigger asChild>
-            <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
-              <Trash2 className="mr-2 h-4 w-4" />
-              Hapus
-            </DropdownMenuItem>
-          </AlertDialogTrigger>
-        </DropdownMenuContent>
-      </DropdownMenu>
+    <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+      <AlertDialogTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+          <Trash2 className="h-4 w-4" />
+          <span className="sr-only">Hapus</span>
+        </Button>
+      </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Apakah Anda yakin?</AlertDialogTitle>
@@ -79,7 +65,7 @@ export function SaleActions({ sale }: SaleActionsProps) {
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Batal</AlertDialogCancel>
+          <AlertDialogCancel disabled={isDeleting}>Batal</AlertDialogCancel>
           <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-destructive hover:bg-destructive/90">
              {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Hapus
