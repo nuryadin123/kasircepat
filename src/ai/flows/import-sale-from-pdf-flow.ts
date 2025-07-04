@@ -43,12 +43,13 @@ const prompt = ai.definePrompt({
   prompt: `You are an intelligent data entry assistant for a point-of-sale application.
 Your task is to analyze the provided PDF, which is a sales receipt or invoice, and extract the transaction details.
 
-- Identify each line item sold. For each item, extract its name, quantity, and the price PER-UNIT.
-- Identify the date of the transaction. If you find a date, convert it to a valid ISO 8601 string.
-- Do not extract totals, subtotals, taxes, or discounts. Only extract the individual line items.
-- Structure the extracted information into the required JSON format.
-- If you cannot determine a specific value for a field (e.g., quantity is not listed, assume 1), make a reasonable assumption.
-- It is crucial that you analyze the document provided. If the PDF does not appear to be a receipt or invoice, or if no line items can be found, you MUST return an empty list for the 'items' field.
+- **Analyze Line Items**: Identify each line item sold. For each item, extract its full name, the quantity, and its price.
+- **Calculate Per-Unit Price**: It is very important that you provide the price PER-UNIT. If the document provides a subtotal for the line item (like in a "Subtotal (IDR)" column) instead of a per-unit price, you MUST calculate the per-unit price by dividing the line item's subtotal by the quantity. For example, if quantity is 2 and subtotal is 33,580, the price is 16,790.
+- **Extract Date**: Identify the date of the transaction (look for "Tanggal Invoice"). Convert it to a valid ISO 8601 string (e.g., "YYYY-MM-DDTHH:mm:ss.sssZ").
+- **Ignore Other Costs**: Do not extract overall totals, shipping costs ("Subtotal Ongkir"), taxes, or discounts. Only focus on the individual product line items.
+- **Output Format**: Structure the extracted information into the required JSON format.
+- **Handle Missing Data**: If you cannot determine a quantity for an item, assume 1.
+- **Validation**: You must analyze the document provided. If the PDF does not appear to be a receipt or invoice, or if no line items can be found, you MUST return an empty list for the 'items' field.
 
 PDF for analysis: {{media url=pdfDataUri}}`,
 });
