@@ -329,12 +329,38 @@ function SalesPageContent() {
   };
   
   const handlePdfImport = (data: ImportSaleOutput) => {
-    const productMap = new Map<string, Product>();
-    products.forEach(p => productMap.set(p.name.toLowerCase(), p));
+    const productMapBySku = new Map<string, Product>();
+    const productMapByName = new Map<string, Product>();
+    products.forEach(p => {
+      if (p.sku) {
+        productMapBySku.set(p.sku.toLowerCase(), p);
+      }
+      productMapByName.set(p.name.toLowerCase(), p);
+    });
+
+    let matchedBySkuCount = 0;
+    let matchedByNameCount = 0;
 
     const newCartItems: CartItemWithId[] = data.items.map(item => {
-      const matchedProduct = productMap.get(item.name.toLowerCase());
+      let matchedProduct: Product | undefined = undefined;
 
+      // 1. Try to match by SKU first
+      if (item.sku) {
+        matchedProduct = productMapBySku.get(item.sku.toLowerCase());
+        if (matchedProduct) {
+          matchedBySkuCount++;
+        }
+      }
+
+      // 2. If no SKU match, fall back to matching by name
+      if (!matchedProduct) {
+        matchedProduct = productMapByName.get(item.name.toLowerCase());
+        if (matchedProduct) {
+          matchedByNameCount++;
+        }
+      }
+
+      // Create cart item based on whether a match was found
       if (matchedProduct) {
         return {
           cartId: crypto.randomUUID(),
@@ -346,6 +372,7 @@ function SalesPageContent() {
           quantity: item.quantity,
         };
       } else {
+        // No match found, use PDF data
         return {
           cartId: crypto.randomUUID(),
           productId: `pdf-import-${item.name.replace(/\s+/g, '-').toLowerCase()}`,
@@ -357,7 +384,7 @@ function SalesPageContent() {
         };
       }
     });
-    
+
     setCart(prevCart => [...prevCart, ...newCartItems]);
 
     if (data.date) {
@@ -366,21 +393,22 @@ function SalesPageContent() {
         setTransactionDate(importedDate);
       }
     }
-
-    const matchedCount = newCartItems.filter(item => !item.productId.startsWith('pdf-import-')).length;
-    const unmatchedCount = newCartItems.length - matchedCount;
-
-    let description = `${newCartItems.length} item berhasil diekstrak.`;
-    if (matchedCount > 0) {
-        description += ` ${matchedCount} item dicocokkan dengan produk yang ada.`
+    
+    const unmatchedCount = newCartItems.length - matchedBySkuCount - matchedByNameCount;
+    const descriptionParts = [`${newCartItems.length} item berhasil diekstrak.`];
+    if (matchedBySkuCount > 0) {
+      descriptionParts.push(`${matchedBySkuCount} cocok berdasarkan SKU.`);
     }
-     if (unmatchedCount > 0) {
-        description += ` ${unmatchedCount} item tidak ditemukan dan menggunakan harga dari PDF.`
+    if (matchedByNameCount > 0) {
+      descriptionParts.push(`${matchedByNameCount} cocok berdasarkan nama.`);
+    }
+    if (unmatchedCount > 0) {
+      descriptionParts.push(`${unmatchedCount} tidak ditemukan.`);
     }
 
     toast({
-        title: 'Impor Selesai',
-        description: description,
+      title: 'Impor Selesai',
+      description: descriptionParts.join(' '),
     });
   };
 
