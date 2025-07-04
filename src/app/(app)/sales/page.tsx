@@ -14,17 +14,34 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/s
 import { Button } from '@/components/ui/button';
 import { ShoppingBag } from 'lucide-react';
 
+const DISCOUNT_PERCENTAGE_KEY = 'discountPercentage';
+
 export default function SalesPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<SaleItem[]>([]);
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
   const [lastSale, setLastSale] = useState<Sale | null>(null);
+  const [discountPercentage, setDiscountPercentage] = useState(14.5);
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const [hasMounted, setHasMounted] = useState(false);
 
   useEffect(() => {
     setHasMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const updateDiscount = () => {
+      const savedDiscount = localStorage.getItem(DISCOUNT_PERCENTAGE_KEY);
+      if (savedDiscount) {
+        setDiscountPercentage(parseFloat(savedDiscount) || 0);
+      }
+    };
+    updateDiscount();
+    window.addEventListener('settings_updated', updateDiscount);
+    return () => {
+      window.removeEventListener('settings_updated', updateDiscount);
+    };
   }, []);
 
   useEffect(() => {
@@ -102,7 +119,6 @@ export default function SalesPage() {
         const formattedTransactionId = `TRX-${String(newTransactionNumber).padStart(5, '0')}`;
         
         const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
-        const discountPercentage = 14.5;
         const discountAmount = subtotal * (discountPercentage / 100);
         const total = subtotal - discountAmount;
         
@@ -160,7 +176,6 @@ export default function SalesPage() {
   
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const discountPercentage = 14.5;
   const discountAmount = subtotal * (discountPercentage / 100);
   const total = subtotal - discountAmount;
 
@@ -184,6 +199,7 @@ export default function SalesPage() {
             onItemRemove={handleItemRemove}
             onQuantityChange={handleQuantityChange}
             onCheckout={handleCheckout}
+            discountPercentage={discountPercentage}
           />
         </div>
       </div>
@@ -206,6 +222,7 @@ export default function SalesPage() {
               onItemRemove={handleItemRemove}
               onQuantityChange={handleQuantityChange}
               onCheckout={handleCheckout}
+              discountPercentage={discountPercentage}
             />
           </SheetContent>
         </Sheet>

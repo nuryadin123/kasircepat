@@ -26,10 +26,12 @@ import { collection, getDocs, writeBatch, doc } from 'firebase/firestore';
 
 const STORE_NAME_KEY = 'storeName';
 const STORE_ADDRESS_KEY = 'storeAddress';
+const DISCOUNT_PERCENTAGE_KEY = 'discountPercentage';
 
 export default function SettingsPage() {
   const [storeName, setStoreName] = useState('');
   const [storeAddress, setStoreAddress] = useState('');
+  const [discountPercentage, setDiscountPercentage] = useState('14.5');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -40,8 +42,10 @@ export default function SettingsPage() {
     // Load settings from localStorage
     const savedStoreName = localStorage.getItem(STORE_NAME_KEY) || 'Kasiran App';
     const savedStoreAddress = localStorage.getItem(STORE_ADDRESS_KEY) || '';
+    const savedDiscount = localStorage.getItem(DISCOUNT_PERCENTAGE_KEY) || '14.5';
     setStoreName(savedStoreName);
     setStoreAddress(savedStoreAddress);
+    setDiscountPercentage(savedDiscount);
     setIsLoading(false);
   }, []);
 
@@ -50,6 +54,7 @@ export default function SettingsPage() {
     // Save settings to localStorage
     localStorage.setItem(STORE_NAME_KEY, storeName);
     localStorage.setItem(STORE_ADDRESS_KEY, storeAddress);
+    localStorage.setItem(DISCOUNT_PERCENTAGE_KEY, discountPercentage);
     
     // Dispatch a custom event to notify other components of the change
     window.dispatchEvent(new Event('settings_updated'));
@@ -117,9 +122,9 @@ export default function SettingsPage() {
       <div className="flex flex-col gap-8 mt-4">
         <Card>
           <CardHeader>
-            <CardTitle>Profil Toko</CardTitle>
+            <CardTitle>Profil Toko & Diskon</CardTitle>
             <CardDescription>
-              Informasi dasar mengenai toko atau bisnis Anda.
+              Informasi dasar dan pengaturan diskon default untuk penjualan.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -139,6 +144,16 @@ export default function SettingsPage() {
                 placeholder="Masukkan alamat toko" 
                 value={storeAddress}
                 onChange={(e) => setStoreAddress(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="discount-percentage">Diskon (%)</Label>
+              <Input
+                id="discount-percentage"
+                type="number"
+                placeholder="cth. 14.5"
+                value={discountPercentage}
+                onChange={(e) => setDiscountPercentage(e.target.value)}
               />
             </div>
             <Button onClick={handleSave} disabled={isSaving}>
@@ -180,7 +195,7 @@ export default function SettingsPage() {
                     <AlertDialogHeader>
                     <AlertDialogTitle>Apakah Anda benar-benar yakin?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Tindakan ini tidak dapat dibatalkan. Ini akan menghapus semua produk, penjualan, dan data arus kas secara permanen dari database.
+                        Tindakan ini akan menghapus semua produk, penjualan, dan data arus kas secara permanen dari database.
                     </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

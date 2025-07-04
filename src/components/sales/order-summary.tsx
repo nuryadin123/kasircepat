@@ -12,12 +12,11 @@ interface OrderSummaryProps {
   onItemRemove: (productId: string) => void;
   onQuantityChange: (productId: string, newQuantity: number) => void;
   onCheckout: () => void;
+  discountPercentage: number;
 }
 
-export function OrderSummary({ items, onItemRemove, onQuantityChange, onCheckout }: OrderSummaryProps) {
+export function OrderSummary({ items, onItemRemove, onQuantityChange, onCheckout, discountPercentage }: OrderSummaryProps) {
   const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
-
-  const discountPercentage = 14.5;
   const discountAmount = subtotal * (discountPercentage / 100);
   const total = subtotal - discountAmount;
 
