@@ -9,7 +9,7 @@ import type { Product, SaleItem, Sale } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { ReceiptDialog } from '@/components/sales/receipt-dialog';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, doc, runTransaction, getDoc, query, where } from 'firebase/firestore';
+import { collection, getDocs, doc, runTransaction, getDoc, query, where, type DocumentReference } from 'firebase/firestore';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -149,53 +149,75 @@ function SalesPageContent() {
             await runTransaction(db, async (transaction) => {
                 const saleRef = doc(db, 'sales', editingSaleId);
                 const saleSnap = await transaction.get(saleRef);
+
                 if (!saleSnap.exists()) {
-                    throw new Error("Penjualan tidak ditemukan lagi.");
+                    throw new Error("Sale document not found.");
                 }
                 const originalSaleData = saleSnap.data();
 
-                // Reads must be first
-                let cogsSnap;
+                // All reads must happen before writes.
+                // READ 1: sale data (done above)
+                // READ 2: Find the corresponding COGS entry in cash-flow
+                let cogsDocRef: DocumentReference | null = null;
+
                 if (originalSaleData.transactionId) {
-                    const cogsQuery = query(collection(db, 'cash-flow'), where('description', '==', `Biaya Pokok Penjualan ${originalSaleData.transactionId}`));
-                    cogsSnap = await transaction.get(cogsQuery);
+                    const cogsQuery = query(
+                        collection(db, 'cash-flow'), 
+                        where('description', '==', `Biaya Pokok Penjualan ${originalSaleData.transactionId}`)
+                    );
+                    const cogsSnap = await transaction.get(cogsQuery);
+                    if (!cogsSnap.empty) {
+                        // Assuming there's only one such entry
+                        cogsDocRef = cogsSnap.docs[0].ref;
+                    }
                 }
 
-                // Prepare data for writes
+                // All reads are complete. Now, prepare data for writes.
                 const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
                 const discountAmount = subtotal * (discountPercentage / 100);
                 const total = subtotal - discountAmount;
                 const totalCost = cart.reduce((acc, item) => acc + (item.cost || 0) * item.quantity, 0);
+                const writeTime = new Date();
 
-                // Now perform writes
-                transaction.update(saleRef, { items: cart, subtotal, discountAmount, total, date: new Date() });
-                
-                if (originalSaleData.transactionId) {
-                    if (cogsSnap && !cogsSnap.empty) {
-                        const cogsDocRef = cogsSnap.docs[0].ref;
-                        if (totalCost > 0) {
-                            transaction.update(cogsDocRef, { amount: totalCost, date: new Date() });
-                        } else {
-                            transaction.delete(cogsDocRef);
-                        }
-                    } else if (totalCost > 0) {
-                        const expenseRef = doc(collection(db, 'cash-flow'));
-                        transaction.set(expenseRef, {
-                            date: new Date(),
-                            type: 'Pengeluaran',
-                            description: `Biaya Pokok Penjualan ${originalSaleData.transactionId}`,
-                            amount: totalCost,
-                            category: 'Biaya Pokok Penjualan',
-                        });
+                // WRITE 1: Update the sale document itself.
+                transaction.update(saleRef, { 
+                    items: cart, 
+                    subtotal, 
+                    discountAmount, 
+                    total, 
+                    date: writeTime 
+                });
+
+                // WRITE 2: Update, create, or delete the COGS entry.
+                if (cogsDocRef) { // An old COGS entry exists
+                    if (totalCost > 0) {
+                        // Update it with the new cost
+                        transaction.update(cogsDocRef, { amount: totalCost, date: writeTime });
+                    } else {
+                        // The new cost is 0, so delete the old entry
+                        transaction.delete(cogsDocRef);
                     }
+                } else if (originalSaleData.transactionId && totalCost > 0) { // No old entry, but a new one is needed
+                    const newExpenseRef = doc(collection(db, 'cash-flow'));
+                    transaction.set(newExpenseRef, {
+                        date: writeTime,
+                        type: 'Pengeluaran',
+                        description: `Biaya Pokok Penjualan ${originalSaleData.transactionId}`,
+                        amount: totalCost,
+                        category: 'Biaya Pokok Penjualan',
+                    });
                 }
             });
 
             toast({ title: "Sukses", description: "Penjualan berhasil diperbarui." });
             router.push('/reports');
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error updating transaction: ", error);
-            toast({ title: "Gagal Memperbarui", description: "Terjadi kesalahan saat menyimpan perubahan.", variant: "destructive" });
+            toast({ 
+                title: "Gagal Memperbarui", 
+                description: `Terjadi kesalahan saat menyimpan perubahan: ${error.message}`, 
+                variant: "destructive" 
+            });
         }
     } else {
         // Create Logic
