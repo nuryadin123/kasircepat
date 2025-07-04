@@ -421,6 +421,29 @@ function SalesPageContent() {
     });
   };
 
+  const handleProductAddedFromCart = (newProduct: Product, cartId: string) => {
+    // Update the cart
+    setCart(prevCart => {
+        return prevCart.map(cartItem => {
+            if (cartItem.cartId === cartId) {
+                return {
+                    ...cartItem,
+                    productId: newProduct.id,
+                    cost: newProduct.cost,
+                    price: newProduct.price, // Also update price to be sure
+                    name: newProduct.name,
+                    sku: newProduct.sku,
+                    isUnmatched: false, // Mark as matched
+                };
+            }
+            return cartItem;
+        });
+    });
+
+    // Update the local product list
+    setProducts(prevProducts => [newProduct, ...prevProducts].sort((a,b) => a.name.localeCompare(b.name)));
+  };
+
   if (!hasMounted || isLoadingSale) {
     return (
         <>
@@ -461,6 +484,7 @@ function SalesPageContent() {
               transactionDate={transactionDate}
               onDateChange={setTransactionDate}
               cashierName={cashier?.name || 'Kasir'}
+              onProductAdded={handleProductAddedFromCart}
             />
         )}
       </div>

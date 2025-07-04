@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { SaleItem } from '@/types';
+import type { Product, SaleItem } from '@/types';
 import { X, MinusCircle, PlusCircle, Calendar as CalendarIcon, User, AlertTriangle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -12,6 +12,8 @@ import { format } from 'date-fns';
 import { id as indonesiaLocale } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { AddUnmatchedProductDialog } from './add-unmatched-product-dialog';
+
 
 type CartItemWithId = SaleItem & { cartId: string };
 
@@ -25,6 +27,7 @@ interface OrderSummaryProps {
   transactionDate: Date;
   onDateChange: (date: Date) => void;
   cashierName: string;
+  onProductAdded: (newProduct: Product, cartId: string) => void;
 }
 
 export function OrderSummary({ 
@@ -36,7 +39,8 @@ export function OrderSummary({
   isEditing,
   transactionDate,
   onDateChange,
-  cashierName
+  cashierName,
+  onProductAdded
 }: OrderSummaryProps) {
   const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const discountAmount = subtotal * (discountPercentage / 100);
@@ -129,6 +133,14 @@ export function OrderSummary({
                         <PlusCircle className="h-4 w-4" />
                       </Button>
                     </div>
+                     {item.isUnmatched && (
+                        <div className="mt-2">
+                            <AddUnmatchedProductDialog 
+                            item={item} 
+                            onProductAdded={onProductAdded} 
+                            />
+                        </div>
+                    )}
                   </div>
                   <div className="text-right">
                     <p className="font-medium">
