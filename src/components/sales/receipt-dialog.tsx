@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -19,7 +20,20 @@ interface ReceiptDialogProps {
   sale: Sale | null;
 }
 
+const STORE_NAME_KEY = 'storeName';
+
 export function ReceiptDialog({ isOpen, onClose, sale }: ReceiptDialogProps) {
+  const [storeName, setStoreName] = useState('Kasiran App');
+
+  useEffect(() => {
+    if (isOpen) {
+      const savedStoreName = localStorage.getItem(STORE_NAME_KEY);
+      if (savedStoreName) {
+        setStoreName(savedStoreName);
+      }
+    }
+  }, [isOpen]);
+
   if (!sale) {
     return null;
   }
@@ -41,7 +55,7 @@ export function ReceiptDialog({ isOpen, onClose, sale }: ReceiptDialogProps) {
           <div className="py-2 font-mono text-sm">
               <div className="space-y-2">
                   <div className="text-center text-muted-foreground">
-                      <p className="font-bold text-black">Kasiran App</p>
+                      <p className="font-bold text-black">{storeName}</p>
                       <p className="text-xs text-black">{new Date(sale.date).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short'})}</p>
                       <p className="text-xs text-black truncate">No: {sale.transactionId || sale.id}</p>
                       {sale.customer && <p className="text-xs text-black">Pelanggan: {sale.customer.name}</p>}

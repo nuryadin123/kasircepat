@@ -2,16 +2,35 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { PanelLeft, Terminal, Settings } from 'lucide-react';
 import { navItems } from './sidebar';
 import { cn } from '@/lib/utils';
 
+const STORE_NAME_KEY = 'storeName';
+
 export function MobileNav() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const [storeName, setStoreName] = useState('Kasiran');
+
+  const updateStoreName = () => {
+    const savedStoreName = localStorage.getItem(STORE_NAME_KEY);
+    if (savedStoreName) {
+      setStoreName(savedStoreName);
+    }
+  };
+
+  useEffect(() => {
+    updateStoreName();
+    window.addEventListener('settings_updated', updateStoreName);
+    return () => {
+      window.removeEventListener('settings_updated', updateStoreName);
+    };
+  }, []);
+
 
   const handleLinkClick = () => {
     setIsOpen(false);
@@ -33,7 +52,7 @@ export function MobileNav() {
             className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base"
           >
             <Terminal className="h-4 w-4 transition-all group-hover:scale-110" />
-            <span className="sr-only">Kasiran</span>
+            <span className="sr-only">{storeName}</span>
           </Link>
           {navItems.map((item) => (
             <Link
