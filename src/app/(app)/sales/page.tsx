@@ -17,11 +17,13 @@ import { Loader2, ShoppingBag } from 'lucide-react';
 
 const DISCOUNT_PERCENTAGE_KEY = 'discountPercentage';
 
+type CartItemWithId = SaleItem & { cartId: string };
+
 function SalesPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
-  const [cart, setCart] = useState<SaleItem[]>([]);
+  const [cart, setCart] = useState<CartItemWithId[]>([]);
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
   const [lastSale, setLastSale] = useState<Sale | null>(null);
   const [discountPercentage, setDiscountPercentage] = useState(14.5);
@@ -113,7 +115,11 @@ function SalesPageContent() {
           const saleSnap = await getDoc(saleRef);
           if (saleSnap.exists()) {
             const saleData = { id: saleSnap.id, ...saleSnap.data() } as Sale;
-            setCart(saleData.items);
+            const cartItemsWithId = saleData.items.map((item) => ({
+                ...item,
+                cartId: (item as any).cartId || crypto.randomUUID(),
+            }));
+            setCart(cartItemsWithId);
             setEditingSaleId(saleId);
           } else {
             toast({ title: 'Error', description: 'Transaksi penjualan tidak ditemukan.', variant: 'destructive' });
@@ -136,17 +142,10 @@ function SalesPageContent() {
 
   const handleProductSelect = (product: Product) => {
     setCart((prevCart) => {
-      const existingItem = prevCart.find((item) => item.productId === product.id);
-      if (existingItem) {
-        return prevCart.map((item) =>
-          item.productId === product.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
-      }
       return [
         ...prevCart,
         {
+          cartId: crypto.randomUUID(),
           productId: product.id,
           name: product.name,
           price: product.price,
@@ -157,25 +156,27 @@ function SalesPageContent() {
     });
   };
 
-  const handleQuantityChange = (productId: string, newQuantity: number) => {
+  const handleQuantityChange = (cartId: string, newQuantity: number) => {
     if (newQuantity < 1) {
-        handleItemRemove(productId);
+        handleItemRemove(cartId);
         return;
     }
     setCart((prevCart) =>
       prevCart.map((item) =>
-        item.productId === productId ? { ...item, quantity: newQuantity } : item
+        item.cartId === cartId ? { ...item, quantity: newQuantity } : item
       )
     );
   };
 
-  const handleItemRemove = (productId: string) => {
-    setCart((prevCart) => prevCart.filter((item) => item.productId !== productId));
+  const handleItemRemove = (cartId: string) => {
+    setCart((prevCart) => prevCart.filter((item) => item.cartId !== cartId));
   };
   
   const handleCheckout = async () => {
     if (cart.length === 0) return;
     
+    const itemsToSave: SaleItem[] = cart.map(({ cartId, ...rest }) => rest);
+
     if (editingSaleId) {
         // Update logic
         try {
@@ -211,15 +212,15 @@ function SalesPageContent() {
                 }
 
                 // --- WRITE PHASE (within transaction) ---
-                const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+                const subtotal = itemsToSave.reduce((acc, item) => acc + item.price * item.quantity, 0);
                 const discountAmount = subtotal * (discountPercentage / 100);
                 const total = subtotal - discountAmount;
-                const totalCost = cart.reduce((acc, item) => acc + (item.cost || 0) * item.quantity, 0);
+                const totalCost = itemsToSave.reduce((acc, item) => acc + (item.cost || 0) * item.quantity, 0);
                 const writeTime = new Date();
 
                 // 1. Update the sale document
                 transaction.update(saleRef, { 
-                    items: cart, 
+                    items: itemsToSave, 
                     subtotal, 
                     discountAmount, 
                     total, 
@@ -271,16 +272,16 @@ function SalesPageContent() {
                 }
                 const formattedTransactionId = `TRX-${String(newTransactionNumber).padStart(5, '0')}`;
                 
-                const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+                const subtotal = itemsToSave.reduce((acc, item) => acc + item.price * item.quantity, 0);
                 const discountAmount = subtotal * (discountPercentage / 100);
                 const total = subtotal - discountAmount;
-                const totalCost = cart.reduce((acc, item) => acc + (item.cost || 0) * item.quantity, 0);
+                const totalCost = itemsToSave.reduce((acc, item) => acc + (item.cost || 0) * item.quantity, 0);
 
                 const newSaleRef = doc(collection(db, "sales"));
                 const saleData = {
                     transactionId: formattedTransactionId,
                     date: new Date(),
-                    items: cart,
+                    items: itemsToSave,
                     subtotal,
                     discountAmount,
                     total,

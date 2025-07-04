@@ -7,10 +7,12 @@ import { SaleItem } from '@/types';
 import { X, MinusCircle, PlusCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
+type CartItemWithId = SaleItem & { cartId: string };
+
 interface OrderSummaryProps {
-  items: SaleItem[];
-  onItemRemove: (productId: string) => void;
-  onQuantityChange: (productId: string, newQuantity: number) => void;
+  items: CartItemWithId[];
+  onItemRemove: (cartId: string) => void;
+  onQuantityChange: (cartId: string, newQuantity: number) => void;
   onCheckout: () => void;
   discountPercentage: number;
   isEditing?: boolean;
@@ -34,11 +36,11 @@ export function OrderSummary({ items, onItemRemove, onQuantityChange, onCheckout
             </p>
           ) : (
             items.map((item) => (
-              <div key={item.productId} className="flex items-center gap-4">
+              <div key={item.cartId} className="flex items-center gap-4">
                 <div className="flex-1">
                   <p className="font-medium">{item.name}</p>
                   <div className="flex items-center gap-2 mt-1">
-                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => onQuantityChange(item.productId, item.quantity - 1)}>
+                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => onQuantityChange(item.cartId, item.quantity - 1)}>
                       <MinusCircle className="h-4 w-4" />
                     </Button>
                     <Input
@@ -47,13 +49,13 @@ export function OrderSummary({ items, onItemRemove, onQuantityChange, onCheckout
                         onChange={(e) => {
                             const newQuantity = parseInt(e.target.value, 10);
                             if (!isNaN(newQuantity)) {
-                                onQuantityChange(item.productId, newQuantity >= 0 ? newQuantity : 0);
+                                onQuantityChange(item.cartId, newQuantity >= 0 ? newQuantity : 0);
                             }
                         }}
                         className="h-8 w-14 text-center"
                         min="0"
                     />
-                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => onQuantityChange(item.productId, item.quantity + 1)}>
+                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => onQuantityChange(item.cartId, item.quantity + 1)}>
                       <PlusCircle className="h-4 w-4" />
                     </Button>
                   </div>
@@ -62,7 +64,7 @@ export function OrderSummary({ items, onItemRemove, onQuantityChange, onCheckout
                   <p className="font-medium">
                     Rp{new Intl.NumberFormat('id-ID').format(item.price * item.quantity)}
                   </p>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => onItemRemove(item.productId)}>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => onItemRemove(item.cartId)}>
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
