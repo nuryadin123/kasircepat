@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { PanelLeft, Terminal, Settings } from 'lucide-react';
 import { navItems } from './sidebar';
@@ -51,6 +51,7 @@ export function MobileNav() {
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="sm:max-w-xs flex flex-col">
+        <SheetTitle className="sr-only">Menu Utama</SheetTitle>
         <nav className="grid gap-6 text-lg font-medium">
           <Link
             href={userRole === 'admin' ? '/dashboard' : '/sales'}
