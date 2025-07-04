@@ -1,13 +1,12 @@
 import { Header } from '@/components/shared/header';
 import { Button } from '@/components/ui/button';
 import { ArrowDownLeft, ArrowUpRight, PlusCircle, Scale } from 'lucide-react';
-import { DataTable } from '@/components/data-table';
-import { columns, cashFlowTableActions } from '@/components/cash-flow/columns';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, orderBy, query } from 'firebase/firestore';
 import type { Sale, CashFlowEntry } from '@/types';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { CashFlowFormDialog } from '@/components/cash-flow/cash-flow-form-dialog';
+import { CashFlowTable } from '@/components/cash-flow/cash-flow-table';
 
 async function getCashFlowData(): Promise<{
     entries: CashFlowEntry[],
@@ -108,7 +107,7 @@ export default async function CashFlowPage() {
           />
       </div>
       <div className="mt-4">
-        <DataTable columns={columns} data={entries} actions={cashFlowTableActions(expenseDescriptions)} />
+        <CashFlowTable data={entries} expenseDescriptions={expenseDescriptions} />
       </div>
     </>
   );
