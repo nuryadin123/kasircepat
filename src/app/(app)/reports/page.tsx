@@ -60,7 +60,7 @@ export default function ReportsPage() {
             day: 'numeric', month: 'long', year: 'numeric'
         });
 
-        // Header
+        // --- PDF HEADER ---
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(20);
         doc.text(storeName, 14, 22);
@@ -71,7 +71,7 @@ export default function ReportsPage() {
         doc.setFontSize(10);
         doc.text(`Tanggal Dibuat: ${generatedDate}`, 14, 35);
 
-        // Table
+        // --- SUMMARY TABLE ---
         (doc as any).autoTable({
             startY: 45,
             head: [['No. Transaksi', 'Tanggal', 'Jumlah Item', 'Total']],
@@ -81,19 +81,119 @@ export default function ReportsPage() {
                 sale.items.reduce((sum, item) => sum + item.quantity, 0),
                 `Rp${new Intl.NumberFormat('id-ID').format(sale.total)}`
             ]),
-            headStyles: { fillColor: [37, 99, 235], textColor: 255, fontStyle: 'bold' },
+            headStyles: { fillColor: [63, 81, 181] },
             alternateRowStyles: { fillColor: [240, 240, 240] },
             styles: { font: 'helvetica', fontSize: 9 },
             theme: 'striped',
-            didDrawPage: (data: any) => {
-                // Footer
-                const pageCount = doc.getNumberOfPages();
-                doc.setFontSize(8);
-                doc.text(`Halaman ${data.pageNumber} dari ${pageCount}`, data.settings.margin.left, doc.internal.pageSize.height - 10);
-            }
         });
 
-        doc.save(`Laporan-Penjualan-${storeName.replace(/\s/g, '_')}.pdf`);
+        let finalY = (doc as any).lastAutoTable.finalY;
+
+        // --- DETAILED SECTION ---
+        finalY += 15;
+        
+        if (finalY > 270) {
+            doc.addPage();
+            finalY = 20;
+        }
+        
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(14);
+        doc.text('Detail Penjualan per Transaksi', 14, finalY);
+        finalY += 10;
+        
+        sales.forEach((sale, index) => {
+            const itemsHeight = sale.items.length * 7;
+            const summaryHeight = 25;
+            const blockHeight = 15 + itemsHeight + summaryHeight;
+
+            if (finalY + blockHeight > 280) {
+                doc.addPage();
+                finalY = 20;
+            }
+
+            if (index > 0) {
+                doc.setDrawColor(200);
+                doc.line(14, finalY - 5, doc.internal.pageSize.width - 14, finalY - 5);
+            }
+
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.text(
+                `No. Transaksi: ${sale.transactionId || sale.id.substring(0, 7).toUpperCase()}`,
+                14,
+                finalY
+            );
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9);
+            doc.text(
+                `Tanggal: ${new Date(sale.date).toLocaleString('id-ID')}`,
+                doc.internal.pageSize.width - 14,
+                finalY,
+                { align: 'right' }
+            );
+            finalY += 8;
+
+            (doc as any).autoTable({
+                startY: finalY,
+                head: [['Nama Produk', 'Kuantitas', 'Harga Satuan', 'Subtotal']],
+                body: sale.items.map(item => [
+                    item.name,
+                    item.quantity,
+                    `Rp${new Intl.NumberFormat('id-ID').format(item.price)}`,
+                    `Rp${new Intl.NumberFormat('id-ID').format(item.price * item.quantity)}`
+                ]),
+                theme: 'grid',
+                headStyles: { fillColor: [241, 245, 249], textColor: 20, fontStyle: 'bold', fontSize: 9 },
+                styles: { font: 'helvetica', fontSize: 8 },
+                margin: { left: 14, right: 14 },
+            });
+
+            finalY = (doc as any).lastAutoTable.finalY;
+
+            const subtotal = sale.subtotal ?? sale.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+            const discountAmount = sale.discountAmount ?? 0;
+
+            finalY += 6;
+            doc.setFontSize(9);
+            doc.text(
+                `Subtotal: Rp${new Intl.NumberFormat('id-ID').format(subtotal)}`,
+                doc.internal.pageSize.width - 14,
+                finalY,
+                { align: 'right' }
+            );
+
+            if (discountAmount > 0) {
+                finalY += 5;
+                 doc.text(
+                    `Diskon: -Rp${new Intl.NumberFormat('id-ID').format(discountAmount)}`,
+                    doc.internal.pageSize.width - 14,
+                    finalY,
+                    { align: 'right' }
+                );
+            }
+            
+            finalY += 5;
+            doc.setFont('helvetica', 'bold');
+            doc.text(
+                `Total: Rp${new Intl.NumberFormat('id-ID').format(sale.total)}`,
+                doc.internal.pageSize.width - 14,
+                finalY,
+                { align: 'right' }
+            );
+            
+            finalY += 15;
+        });
+        
+        const pageCount = doc.getNumberOfPages();
+        for(let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.text(`Halaman ${i} dari ${pageCount}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
+        }
+
+
+        doc.save(`Laporan-Penjualan-Detail-${storeName.replace(/\s/g, '_')}.pdf`);
     } catch (error) {
         console.error("Failed to export PDF:", error);
         toast({
