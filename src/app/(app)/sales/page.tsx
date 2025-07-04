@@ -10,7 +10,10 @@ import { useToast } from '@/hooks/use-toast';
 import { ReceiptDialog } from '@/components/sales/receipt-dialog';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, doc, runTransaction, getDoc, query, where } from 'firebase/firestore';
-import { Loader2 } from 'lucide-react';
+import { Loader2, FileUp } from 'lucide-react';
+import { SalesImportDialog } from '@/components/sales/sales-import-dialog';
+import type { ImportSaleOutput } from '@/ai/flows/import-sale-from-pdf-flow';
+import { Button } from '@/components/ui/button';
 
 const DISCOUNT_PERCENTAGE_KEY = 'discountPercentage';
 
@@ -324,6 +327,28 @@ function SalesPageContent() {
     }
   };
   
+  const handlePdfImport = (data: ImportSaleOutput) => {
+    const newCartItems: CartItemWithId[] = data.items.map(item => ({
+      cartId: crypto.randomUUID(),
+      // Use a placeholder product ID as we can't know the real one from a PDF
+      productId: `pdf-import-${item.name.replace(/\s+/g, '-').toLowerCase()}`,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+      cost: 0, // Cost is unknown from a receipt, assume 0 for profit calculation
+    }));
+
+    setCart(prevCart => [...prevCart, ...newCartItems]);
+
+    if (data.date) {
+      const importedDate = new Date(data.date);
+      // Check if the date from PDF is valid before setting it
+      if (!isNaN(importedDate.getTime())) {
+        setTransactionDate(importedDate);
+      }
+    }
+  };
+
   if (!hasMounted || isLoadingSale) {
     return (
         <>
@@ -341,7 +366,17 @@ function SalesPageContent() {
     <>
       <Header title={editingSaleId ? 'Edit Penjualan' : 'Pemrosesan Penjualan'} />
       <div className="max-w-4xl mx-auto w-full flex flex-col gap-8 mt-4 pb-24">
-        <ProductSelector products={products} onProductSelect={handleProductSelect} />
+        <div className="flex flex-col sm:flex-row items-start gap-4">
+          <div className="flex-grow w-full">
+            <ProductSelector products={products} onProductSelect={handleProductSelect} />
+          </div>
+          <SalesImportDialog onImportSuccess={handlePdfImport}>
+            <Button variant="outline" className="w-full sm:w-auto">
+              <FileUp className="mr-2 h-4 w-4" />
+              Impor dari PDF
+            </Button>
+          </SalesImportDialog>
+        </div>
         
         {cart.length > 0 && (
             <OrderSummary 
