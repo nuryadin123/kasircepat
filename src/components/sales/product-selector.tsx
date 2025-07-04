@@ -46,7 +46,7 @@ export function ProductSelector({ products, onProductSelect }: ProductSelectorPr
             <SelectGroup>
               {products.map((product) => (
                 <SelectItem key={product.id} value={product.id}>
-                  {`${product.name}${product.variant ? ` (${product.variant})` : ''} - Rp${new Intl.NumberFormat('id-ID').format(product.price)}`}
+                  {`${product.name}${product.sku ? ` (${product.sku})` : ''} - Rp${new Intl.NumberFormat('id-ID').format(product.price)}`}
                 </SelectItem>
               ))}
             </SelectGroup>

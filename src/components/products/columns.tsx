@@ -9,8 +9,8 @@ export const columns = [
     header: 'Nama Produk',
   },
   {
-    accessorKey: 'variant',
-    header: 'Varian',
+    accessorKey: 'sku',
+    header: 'SKU',
   },
   {
     accessorKey: 'price',

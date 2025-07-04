@@ -51,7 +51,7 @@ export function SaleDetailDialog({ sale, children }: SaleDetailDialogProps) {
                 <div>
                   <p className="font-medium">
                     {item.name}
-                    {item.variant && <span className="text-xs text-muted-foreground ml-1">({item.variant})</span>}
+                    {item.sku && <span className="text-xs text-muted-foreground ml-1">({item.sku})</span>}
                   </p>
                   <p className="text-muted-foreground">
                     {item.quantity} x Rp{new Intl.NumberFormat('id-ID').format(item.price)}

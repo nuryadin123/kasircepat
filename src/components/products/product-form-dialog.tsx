@@ -32,7 +32,7 @@ import { Loader2 } from 'lucide-react';
 
 const productFormSchema = z.object({
   name: z.string().min(1, { message: 'Nama produk tidak boleh kosong.' }),
-  variant: z.string().optional(),
+  sku: z.string().optional(),
   price: z.coerce.number().min(0, { message: 'Harga harus positif.' }),
   cost: z.coerce.number().min(0, { message: 'Harga modal harus positif.' }),
   stock: z.coerce.number().int({ message: 'Stok harus berupa angka bulat.' }).min(0, { message: 'Stok tidak boleh negatif.' }),
@@ -55,13 +55,13 @@ export function ProductFormDialog({ product, children }: ProductFormDialogProps)
     resolver: zodResolver(productFormSchema),
     defaultValues: product ? {
       name: product.name,
-      variant: product.variant || '',
+      sku: product.sku || '',
       price: product.price,
       stock: product.stock,
       cost: product.cost || 0,
     } : {
       name: '',
-      variant: '',
+      sku: '',
       price: 0,
       stock: 0,
       cost: 0,
@@ -126,12 +126,12 @@ export function ProductFormDialog({ product, children }: ProductFormDialogProps)
             />
             <FormField
               control={form.control}
-              name="variant"
+              name="sku"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Varian (Opsional)</FormLabel>
+                  <FormLabel>SKU (Opsional)</FormLabel>
                   <FormControl>
-                    <Input placeholder="cth. Merah, XL" {...field} />
+                    <Input placeholder="cth. KP-S-01" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

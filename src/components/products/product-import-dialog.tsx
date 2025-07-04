@@ -68,13 +68,13 @@ export function ProductImportDialog({ children }: ProductImportDialogProps) {
             const name = row['nama prodak'] || row['Nama Produk'] || row['name'];
             const price = row['harga jual'] || row['Harga Jual'] || row['price'];
             const cost = row['harga modal'] || row['Harga Modal'] || row['cost'];
-            const variant = row['varian'] || row['Varian'] || row['variant'];
+            const sku = row['sku'] || row['SKU'];
 
             if (name && typeof price === 'number' && typeof cost === 'number') {
               const productRef = doc(collection(db, 'products'));
               batch.set(productRef, {
                 name: String(name),
-                variant: String(variant || ''),
+                sku: String(sku || ''),
                 price: Number(price),
                 cost: Number(cost),
                 stock: row['stok'] || row['Stok'] || row['stock'] || 0,
@@ -142,7 +142,7 @@ export function ProductImportDialog({ children }: ProductImportDialogProps) {
         <DialogHeader>
           <DialogTitle>Impor Produk dari Excel</DialogTitle>
           <DialogDescription>
-            Pilih file .xlsx untuk mengimpor data produk secara massal. Pastikan file Anda memiliki kolom: `nama prodak`, `harga jual`, dan `harga modal`. Kolom opsional: `stok`, `varian`.
+            Pilih file .xlsx untuk mengimpor data produk secara massal. Pastikan file Anda memiliki kolom: `nama prodak`, `harga jual`, dan `harga modal`. Kolom opsional: `stok`, `sku`.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">

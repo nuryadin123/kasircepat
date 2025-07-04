@@ -70,7 +70,10 @@ export function ReceiptDialog({ isOpen, onClose, sale }: ReceiptDialogProps) {
                       {sale.items.map((item, index) => (
                           <div key={`${item.productId}-${index}`} className="flex">
                               <div className="flex-1">
-                                  <p className="font-medium text-foreground print:text-black">{item.name}</p>
+                                  <p className="font-medium text-foreground print:text-black">
+                                    {item.name}
+                                    {item.sku && <span className="text-muted-foreground ml-1">({item.sku})</span>}
+                                  </p>
                                   <p className="text-muted-foreground print:text-black">
                                       {item.quantity} x Rp{new Intl.NumberFormat('id-ID').format(item.price)}
                                   </p>
