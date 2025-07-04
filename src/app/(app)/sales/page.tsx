@@ -9,7 +9,7 @@ import type { Product, SaleItem, Sale } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { ReceiptDialog } from '@/components/sales/receipt-dialog';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, doc, runTransaction, getDoc, query, where, type DocumentReference } from 'firebase/firestore';
+import { collection, getDocs, doc, runTransaction, getDoc, query, where } from 'firebase/firestore';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -146,39 +146,38 @@ function SalesPageContent() {
     if (editingSaleId) {
         // Update logic
         try {
-            // PRE-TRANSACTION READ: Get the transactionId beforehand.
-            // The transaction itself will re-validate the sale data's consistency.
-            const saleRefForId = doc(db, 'sales', editingSaleId);
-            const initialSaleSnap = await getDoc(saleRefForId);
+            const saleRef = doc(db, 'sales', editingSaleId);
+
+            // --- PRE-TRANSACTION READS ---
+            const initialSaleSnap = await getDoc(saleRef);
             if (!initialSaleSnap.exists()) {
                 throw new Error("Sale document to edit was not found.");
             }
             const transactionId = initialSaleSnap.data().transactionId;
 
+            // Find the COGS document outside the transaction to avoid the query issue
+            let cogsDocId: string | null = null;
+            if (transactionId) {
+                const cogsQuery = query(
+                    collection(db, 'cash-flow'), 
+                    where('description', '==', `Biaya Pokok Penjualan ${transactionId}`)
+                );
+                const cogsQuerySnapshot = await getDocs(cogsQuery);
+                if (!cogsQuerySnapshot.empty) {
+                    cogsDocId = cogsQuerySnapshot.docs[0].id;
+                }
+            }
+            
+            // --- TRANSACTION ---
             await runTransaction(db, async (transaction) => {
-                const saleRef = doc(db, 'sales', editingSaleId);
-                
-                // --- READ PHASE ---
-                // 1. Read the sale document to ensure it hasn't been deleted and for consistency.
+                // --- READ PHASE (within transaction) ---
+                // Re-read sale document for consistency
                 const saleSnap = await transaction.get(saleRef);
                 if (!saleSnap.exists()) {
                     throw new Error("Sale document not found during transaction.");
                 }
-                
-                // 2. Find the existing COGS entry using the transactionId read before the transaction.
-                let cogsDocRef: DocumentReference | null = null;
-                if (transactionId) {
-                    const cogsQuery = query(
-                        collection(db, 'cash-flow'), 
-                        where('description', '==', `Biaya Pokok Penjualan ${transactionId}`)
-                    );
-                    const cogsSnap = await transaction.get(cogsQuery);
-                    if (!cogsSnap.empty) {
-                        cogsDocRef = cogsSnap.docs[0].ref;
-                    }
-                }
 
-                // --- WRITE PHASE ---
+                // --- WRITE PHASE (within transaction) ---
                 const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
                 const discountAmount = subtotal * (discountPercentage / 100);
                 const total = subtotal - discountAmount;
@@ -195,7 +194,8 @@ function SalesPageContent() {
                 });
 
                 // 2. Update, create, or delete the COGS cash-flow entry
-                if (cogsDocRef) { // COGS entry from original sale exists
+                if (cogsDocId) { // Old COGS entry exists
+                    const cogsDocRef = doc(db, 'cash-flow', cogsDocId);
                     if (totalCost > 0) {
                         // Update it with the new cost
                         transaction.update(cogsDocRef, { amount: totalCost, date: writeTime });
