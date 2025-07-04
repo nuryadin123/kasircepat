@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { PanelLeft, Calculator, Settings } from 'lucide-react';
 import { navItems } from './sidebar';
@@ -51,8 +51,11 @@ export function MobileNav() {
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="sm:max-w-xs flex flex-col print:hidden">
-        <SheetTitle className="sr-only">Menu Utama</SheetTitle>
-        <nav className="grid gap-6 text-lg font-medium">
+        <SheetHeader className="sr-only">
+          <SheetTitle>Menu</SheetTitle>
+          <SheetDescription>Navigasi utama untuk aplikasi Kasiran</SheetDescription>
+        </SheetHeader>
+        <nav className="grid gap-6 text-lg font-medium mt-4">
           <Link
             href={userRole === 'admin' ? '/dashboard' : '/sales'}
             onClick={handleLinkClick}
