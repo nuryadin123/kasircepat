@@ -94,7 +94,9 @@ export default function CashFlowPage() {
   }
 
   const { entries, totalIncome, totalExpense, netCashFlow, expenseDescriptions } = data;
-  const displayedEntries = userRole === 'admin' ? entries : entries.filter(e => e.type === 'Pengeluaran');
+  const displayedEntries = userRole === 'admin' 
+    ? entries 
+    : entries.filter(e => e.type === 'Pengeluaran' && !e.description.startsWith('Biaya Pokok Penjualan'));
 
   return (
     <>
