@@ -50,7 +50,7 @@ export function MobileNav() {
           <span className="sr-only">Buka Menu</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="sm:max-w-xs flex flex-col">
+      <SheetContent side="left" className="sm:max-w-xs flex flex-col print:hidden">
         <SheetTitle className="sr-only">Menu Utama</SheetTitle>
         <nav className="grid gap-6 text-lg font-medium">
           <Link

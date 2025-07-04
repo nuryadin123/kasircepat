@@ -69,11 +69,8 @@
 }
 
 @media print {
-  body * {
-    visibility: hidden;
-  }
-  #printable-receipt, #printable-receipt * {
-    visibility: visible;
+  body {
+    background: white;
   }
   #printable-receipt {
     position: absolute;
