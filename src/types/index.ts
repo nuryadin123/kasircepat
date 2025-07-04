@@ -28,11 +28,10 @@ export type Sale = {
 };
 
 export type User = {
-  id: string;
-  name: "Admin" | "Manager" | "Cashier";
+  id: string; // Corresponds to Firebase Auth UID
+  name: string;
   email: string;
-  role: 'admin' | 'manager' | 'cashier';
-  avatar: string;
+  role: 'admin' | 'cashier';
 };
 
 export type CashFlowEntry = {
