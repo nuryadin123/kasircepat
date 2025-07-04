@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Header } from '@/components/shared/header';
 import { OrderSummary } from '@/components/sales/order-summary';
 import { ProductSelector } from '@/components/sales/product-selector';
@@ -8,15 +9,17 @@ import type { Product, SaleItem, Sale } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { ReceiptDialog } from '@/components/sales/receipt-dialog';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, doc, runTransaction } from 'firebase/firestore';
+import { collection, getDocs, doc, runTransaction, getDoc, query, where } from 'firebase/firestore';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { ShoppingBag } from 'lucide-react';
+import { Loader2, ShoppingBag } from 'lucide-react';
 
 const DISCOUNT_PERCENTAGE_KEY = 'discountPercentage';
 
-export default function SalesPage() {
+function SalesPageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<SaleItem[]>([]);
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
@@ -25,6 +28,9 @@ export default function SalesPage() {
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const [hasMounted, setHasMounted] = useState(false);
+  const [editingSaleId, setEditingSaleId] = useState<string | null>(null);
+  const [isLoadingSale, setIsLoadingSale] = useState(false);
+
 
   useEffect(() => {
     setHasMounted(true);
@@ -63,6 +69,37 @@ export default function SalesPage() {
     
     fetchProducts();
   }, [toast]);
+
+  useEffect(() => {
+    const saleId = searchParams.get('edit');
+    if (saleId) {
+      setIsLoadingSale(true);
+      const fetchSaleForEditing = async () => {
+        try {
+          const saleRef = doc(db, 'sales', saleId);
+          const saleSnap = await getDoc(saleRef);
+          if (saleSnap.exists()) {
+            const saleData = { id: saleSnap.id, ...saleSnap.data() } as Sale;
+            setCart(saleData.items);
+            setEditingSaleId(saleId);
+          } else {
+            toast({ title: 'Error', description: 'Transaksi penjualan tidak ditemukan.', variant: 'destructive' });
+            router.push('/reports');
+          }
+        } catch (error) {
+          console.error("Error fetching sale for edit: ", error);
+          toast({ title: 'Error', description: 'Gagal memuat data penjualan untuk diedit.', variant: 'destructive' });
+        } finally {
+            setIsLoadingSale(false);
+        }
+      };
+      fetchSaleForEditing();
+    } else {
+        // If there's no edit id, reset to new sale mode
+        setCart([]);
+        setEditingSaleId(null);
+    }
+  }, [searchParams, router, toast]);
 
   const handleProductSelect = (product: Product) => {
     setCart((prevCart) => {
@@ -106,71 +143,120 @@ export default function SalesPage() {
   const handleCheckout = async () => {
     if (cart.length === 0) return;
     
-    try {
-      const newSale = await runTransaction(db, async (transaction) => {
-        const counterRef = doc(db, 'counters', 'sales');
-        const counterDoc = await transaction.get(counterRef);
+    if (editingSaleId) {
+        // Update logic
+        try {
+            const saleRef = doc(db, 'sales', editingSaleId);
+            const originalSaleSnap = await getDoc(saleRef); // Fetch outside transaction to get transactionId
+            if (!originalSaleSnap.exists()) {
+                throw new Error("Sale does not exist anymore.");
+            }
+            const originalSaleData = originalSaleSnap.data();
 
-        let newTransactionNumber = 1;
-        if (counterDoc.exists()) {
-            newTransactionNumber = counterDoc.data().lastNumber + 1;
+            await runTransaction(db, async (transaction) => {
+                const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+                const discountAmount = subtotal * (discountPercentage / 100);
+                const total = subtotal - discountAmount;
+                const totalCost = cart.reduce((acc, item) => acc + (item.cost || 0) * item.quantity, 0);
+
+                transaction.update(saleRef, { items: cart, subtotal, discountAmount, total });
+                
+                if (originalSaleData.transactionId) {
+                    const cogsQuery = query(collection(db, 'cash-flow'), where('description', '==', `Biaya Pokok Penjualan ${originalSaleData.transactionId}`));
+                    const cogsSnap = await transaction.get(cogsQuery);
+                    
+                    if (!cogsSnap.empty) {
+                        const cogsDocRef = cogsSnap.docs[0].ref;
+                        if (totalCost > 0) {
+                            transaction.update(cogsDocRef, { amount: totalCost, date: new Date().toISOString() });
+                        } else {
+                            transaction.delete(cogsDocRef);
+                        }
+                    } else if (totalCost > 0) {
+                        const expenseRef = doc(collection(db, 'cash-flow'));
+                        transaction.set(expenseRef, {
+                            date: new Date().toISOString(),
+                            type: 'Pengeluaran',
+                            description: `Biaya Pokok Penjualan ${originalSaleData.transactionId}`,
+                            amount: totalCost,
+                            category: 'Biaya Pokok Penjualan',
+                        });
+                    }
+                }
+            });
+
+            toast({ title: "Sukses", description: "Penjualan berhasil diperbarui." });
+            router.push('/reports');
+        } catch (error) {
+            console.error("Error updating transaction: ", error);
+            toast({ title: "Gagal Memperbarui", description: "Terjadi kesalahan saat menyimpan perubahan.", variant: "destructive" });
         }
+    } else {
+        // Create Logic (existing code)
+         try {
+            const newSale = await runTransaction(db, async (transaction) => {
+                const counterRef = doc(db, 'counters', 'sales');
+                const counterDoc = await transaction.get(counterRef);
 
-        const formattedTransactionId = `TRX-${String(newTransactionNumber).padStart(5, '0')}`;
-        
-        const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
-        const discountAmount = subtotal * (discountPercentage / 100);
-        const total = subtotal - discountAmount;
-        
-        const totalCost = cart.reduce((acc, item) => acc + (item.cost || 0) * item.quantity, 0);
+                let newTransactionNumber = 1;
+                if (counterDoc.exists()) {
+                    newTransactionNumber = counterDoc.data().lastNumber + 1;
+                }
+                const formattedTransactionId = `TRX-${String(newTransactionNumber).padStart(5, '0')}`;
+                
+                const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+                const discountAmount = subtotal * (discountPercentage / 100);
+                const total = subtotal - discountAmount;
+                const totalCost = cart.reduce((acc, item) => acc + (item.cost || 0) * item.quantity, 0);
 
-        const newSaleRef = doc(collection(db, "sales"));
-        const saleData = {
-            transactionId: formattedTransactionId,
-            date: new Date(),
-            items: cart,
-            subtotal,
-            discountAmount,
-            total,
-            paymentMethod: 'Card' as const,
-        };
-        transaction.set(newSaleRef, saleData);
-        
-        if (totalCost > 0) {
-            const expenseRef = doc(collection(db, 'cash-flow'));
-            const expenseData = {
-                date: new Date().toISOString(),
-                type: 'Pengeluaran',
-                description: `Biaya Pokok Penjualan ${formattedTransactionId}`,
-                amount: totalCost,
-                category: 'Biaya Pokok Penjualan',
-            };
-            transaction.set(expenseRef, expenseData);
+                const newSaleRef = doc(collection(db, "sales"));
+                const saleData = {
+                    transactionId: formattedTransactionId,
+                    date: new Date(),
+                    items: cart,
+                    subtotal,
+                    discountAmount,
+                    total,
+                    paymentMethod: 'Card' as const,
+                };
+                transaction.set(newSaleRef, saleData);
+                
+                if (totalCost > 0) {
+                    const expenseRef = doc(collection(db, 'cash-flow'));
+                    const expenseData = {
+                        date: new Date().toISOString(),
+                        type: 'Pengeluaran',
+                        description: `Biaya Pokok Penjualan ${formattedTransactionId}`,
+                        amount: totalCost,
+                        category: 'Biaya Pokok Penjualan',
+                    };
+                    transaction.set(expenseRef, expenseData);
+                }
+
+                transaction.set(counterRef, { lastNumber: newTransactionNumber });
+
+                return {
+                    ...saleData,
+                    id: newSaleRef.id,
+                    date: saleData.date.toISOString(),
+                } as Sale;
+            });
+            
+            setLastSale(newSale);
+            setCart([]);
+            setIsReceiptOpen(true);
+            toast({
+                title: "Transaksi Berhasil",
+                description: "Penjualan telah berhasil diproses.",
+            });
+        } catch (error) {
+        console.error("Error processing transaction: ", error);
+        toast({
+            title: "Transaksi Gagal",
+            description: "Terjadi kesalahan saat memproses penjualan.",
+            variant: "destructive",
+        });
         }
-
-        transaction.set(counterRef, { lastNumber: newTransactionNumber });
-
-        return {
-            ...saleData,
-            id: newSaleRef.id,
-            date: saleData.date.toISOString(),
-        } as Sale;
-      });
-      
-      setLastSale(newSale);
-      setCart([]);
-      setIsReceiptOpen(true);
-      toast({
-          title: "Transaksi Berhasil",
-          description: "Penjualan telah berhasil diproses.",
-      });
-    } catch (error) {
-       console.error("Error processing transaction: ", error);
-       toast({
-        title: "Transaksi Gagal",
-        description: "Terjadi kesalahan saat memproses penjualan.",
-        variant: "destructive",
-      });
     }
   };
   
@@ -179,17 +265,22 @@ export default function SalesPage() {
   const discountAmount = subtotal * (discountPercentage / 100);
   const total = subtotal - discountAmount;
 
-  if (!hasMounted) {
+  if (!hasMounted || isLoadingSale) {
     return (
         <>
-            <Header title="Pemrosesan Penjualan" />
+            <Header title={editingSaleId ? 'Memuat Penjualan...' : 'Pemrosesan Penjualan'} />
+            {isLoadingSale && (
+                <div className="flex items-center justify-center mt-10">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                </div>
+            )}
         </>
     );
   }
 
   return (
     <>
-      <Header title="Pemrosesan Penjualan" />
+      <Header title={editingSaleId ? 'Edit Penjualan' : 'Pemrosesan Penjualan'} />
       <div className="grid md:grid-cols-[1fr_400px] gap-8 items-start mt-4 pb-24 md:pb-0">
         <ProductSelector products={products} onProductSelect={handleProductSelect} />
         
@@ -200,6 +291,7 @@ export default function SalesPage() {
             onQuantityChange={handleQuantityChange}
             onCheckout={handleCheckout}
             discountPercentage={discountPercentage}
+            isEditing={!!editingSaleId}
           />
         </div>
       </div>
@@ -223,6 +315,7 @@ export default function SalesPage() {
               onQuantityChange={handleQuantityChange}
               onCheckout={handleCheckout}
               discountPercentage={discountPercentage}
+              isEditing={!!editingSaleId}
             />
           </SheetContent>
         </Sheet>
@@ -235,4 +328,13 @@ export default function SalesPage() {
       />
     </>
   );
+}
+
+
+export default function SalesPage() {
+    return (
+        <Suspense fallback={<Header title="Memuat..." />}>
+            <SalesPageContent />
+        </Suspense>
+    )
 }

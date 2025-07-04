@@ -13,9 +13,10 @@ interface OrderSummaryProps {
   onQuantityChange: (productId: string, newQuantity: number) => void;
   onCheckout: () => void;
   discountPercentage: number;
+  isEditing?: boolean;
 }
 
-export function OrderSummary({ items, onItemRemove, onQuantityChange, onCheckout, discountPercentage }: OrderSummaryProps) {
+export function OrderSummary({ items, onItemRemove, onQuantityChange, onCheckout, discountPercentage, isEditing }: OrderSummaryProps) {
   const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const discountAmount = subtotal * (discountPercentage / 100);
   const total = subtotal - discountAmount;
@@ -88,7 +89,7 @@ export function OrderSummary({ items, onItemRemove, onQuantityChange, onCheckout
           <span>Rp{new Intl.NumberFormat('id-ID').format(total)}</span>
         </div>
         <Button size="lg" className="mt-4" onClick={onCheckout} disabled={items.length === 0}>
-          Bayar
+          {isEditing ? 'Simpan Perubahan' : 'Bayar'}
         </Button>
       </CardFooter>
     </Card>
