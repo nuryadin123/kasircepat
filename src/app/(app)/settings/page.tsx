@@ -66,7 +66,7 @@ export default function SettingsPage() {
   const handleDeleteAllData = async () => {
     setIsDeleting(true);
     try {
-      const collectionsToDelete = ['products', 'customers', 'sales', 'cash-flow'];
+      const collectionsToDelete = ['products', 'sales', 'cash-flow'];
       const batch = writeBatch(db);
 
       for (const collectionName of collectionsToDelete) {
@@ -180,7 +180,7 @@ export default function SettingsPage() {
                     <AlertDialogHeader>
                     <AlertDialogTitle>Apakah Anda benar-benar yakin?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Tindakan ini tidak dapat dibatalkan. Ini akan menghapus semua produk, penjualan, pelanggan, dan data arus kas secara permanen dari database.
+                        Tindakan ini tidak dapat dibatalkan. Ini akan menghapus semua produk, penjualan, dan data arus kas secara permanen dari database.
                     </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

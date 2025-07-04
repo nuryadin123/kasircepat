@@ -6,7 +6,6 @@ import {
   LayoutDashboard,
   Package,
   ShoppingCart,
-  UsersRound,
   BarChart2,
   Settings,
   Terminal,
@@ -27,7 +26,6 @@ export const navItems = [
   { href: '/products', icon: Package, label: 'Produk' },
   { href: '/reports', icon: BarChart2, label: 'Laporan' },
   { href: '/cash-flow', icon: Landmark, label: 'Arus Kas' },
-  { href: '/customers', icon: UsersRound, label: 'Pelanggan' },
 ];
 
 const STORE_NAME_KEY = 'storeName';

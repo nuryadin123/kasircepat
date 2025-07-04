@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react';
 import { Header } from '@/components/shared/header';
 import { OrderSummary } from '@/components/sales/order-summary';
 import { ProductSelector } from '@/components/sales/product-selector';
-import type { Product, SaleItem, Customer, Sale } from '@/types';
+import type { Product, SaleItem, Sale } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { ReceiptDialog } from '@/components/sales/receipt-dialog';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, doc, runTransaction, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, doc, runTransaction } from 'firebase/firestore';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -16,8 +16,6 @@ import { ShoppingBag } from 'lucide-react';
 
 export default function SalesPage() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [cart, setCart] = useState<SaleItem[]>([]);
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
   const [lastSale, setLastSale] = useState<Sale | null>(null);
@@ -46,24 +44,7 @@ export default function SalesPage() {
       }
     };
     
-    const fetchCustomers = async () => {
-        try {
-            const customersCol = query(collection(db, 'customers'), orderBy('name', 'asc'));
-            const customerSnapshot = await getDocs(customersCol);
-            const customerList = customerSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Customer));
-            setCustomers(customerList);
-        } catch (error) {
-            console.error("Error fetching customers: ", error);
-            toast({
-                title: "Gagal Memuat Pelanggan",
-                description: "Tidak dapat mengambil data pelanggan dari server.",
-                variant: "destructive",
-            })
-        }
-    };
-
     fetchProducts();
-    fetchCustomers();
   }, [toast]);
 
   const handleProductSelect = (product: Product) => {
@@ -121,8 +102,7 @@ export default function SalesPage() {
         const formattedTransactionId = `TRX-${String(newTransactionNumber).padStart(5, '0')}`;
         
         const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
-        const selectedCustomer = customers.find(c => c.id === selectedCustomerId);
-        const discountPercentage = selectedCustomer ? selectedCustomer.discount : 14.5;
+        const discountPercentage = 14.5;
         const discountAmount = subtotal * (discountPercentage / 100);
         const total = subtotal - discountAmount;
         
@@ -137,7 +117,6 @@ export default function SalesPage() {
             discountAmount,
             total,
             paymentMethod: 'Card' as const,
-            ...(selectedCustomer && { customer: selectedCustomer })
         };
         transaction.set(newSaleRef, saleData);
         
@@ -164,7 +143,6 @@ export default function SalesPage() {
       
       setLastSale(newSale);
       setCart([]);
-      setSelectedCustomerId(null);
       setIsReceiptOpen(true);
       toast({
           title: "Transaksi Berhasil",
@@ -182,8 +160,7 @@ export default function SalesPage() {
   
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const selectedCustomer = customers.find(c => c.id === selectedCustomerId);
-  const discountPercentage = selectedCustomer ? selectedCustomer.discount : 14.5;
+  const discountPercentage = 14.5;
   const discountAmount = subtotal * (discountPercentage / 100);
   const total = subtotal - discountAmount;
 
@@ -207,9 +184,6 @@ export default function SalesPage() {
             onItemRemove={handleItemRemove}
             onQuantityChange={handleQuantityChange}
             onCheckout={handleCheckout}
-            customers={customers}
-            selectedCustomerId={selectedCustomerId}
-            onCustomerSelect={setSelectedCustomerId}
           />
         </div>
       </div>
@@ -232,9 +206,6 @@ export default function SalesPage() {
               onItemRemove={handleItemRemove}
               onQuantityChange={handleQuantityChange}
               onCheckout={handleCheckout}
-              customers={customers}
-              selectedCustomerId={selectedCustomerId}
-              onCustomerSelect={setSelectedCustomerId}
             />
           </SheetContent>
         </Sheet>

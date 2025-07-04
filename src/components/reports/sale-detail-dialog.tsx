@@ -41,7 +41,7 @@ export function SaleDetailDialog({ sale, children }: SaleDetailDialogProps) {
         <div className="space-y-4 py-2">
           <div className="text-sm text-muted-foreground">
             <p>Tanggal: {new Date(sale.date).toLocaleString('id-ID')}</p>
-            <p>Pelanggan: {sale.customer?.name || 'Pelanggan Umum'}</p>
+            <p>Pelanggan: Pelanggan Umum</p>
           </div>
           <Separator />
           <div className="space-y-2 max-h-64 overflow-y-auto pr-2">

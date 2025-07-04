@@ -52,11 +52,6 @@ export const columns = [
     cell: (row: Sale) => <SafeDateCell isoDate={row.date} />,
   },
   {
-    accessorKey: 'customer',
-    header: 'Pelanggan',
-    cell: (row: Sale) => row.customer?.name || 'Pelanggan Umum',
-  },
-  {
     accessorKey: 'items',
     header: 'Jumlah Item',
     cell: (row: Sale) => (

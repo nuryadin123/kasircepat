@@ -37,7 +37,7 @@ export function RecentSales({ sales = [] }: RecentSalesProps) {
                 <div className="ml-4 space-y-1">
                   <p className="text-sm font-medium leading-none">{sale.items.map(i => i.name).join(', ')}</p>
                   <p className="text-sm text-muted-foreground">
-                    {sale.customer?.name || 'Pelanggan Umum'}
+                    Penjualan Umum
                   </p>
                 </div>
                 <div className="ml-auto font-medium">

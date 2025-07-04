@@ -58,7 +58,6 @@ export function ReceiptDialog({ isOpen, onClose, sale }: ReceiptDialogProps) {
                       <p className="font-bold text-black">{storeName}</p>
                       <p className="text-xs text-black">{new Date(sale.date).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short'})}</p>
                       <p className="text-xs text-black truncate">No: {sale.transactionId || sale.id}</p>
-                      {sale.customer && <p className="text-xs text-black">Pelanggan: {sale.customer.name}</p>}
                   </div>
                   <Separator className="my-2 border-dashed" />
                   <div className="space-y-2">

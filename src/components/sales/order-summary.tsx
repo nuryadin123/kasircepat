@@ -3,26 +3,21 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { SaleItem, Customer } from '@/types';
-import { X, MinusCircle, PlusCircle, User, Percent } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SaleItem } from '@/types';
+import { X, MinusCircle, PlusCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
 interface OrderSummaryProps {
   items: SaleItem[];
-  customers: Customer[];
-  selectedCustomerId: string | null;
   onItemRemove: (productId: string) => void;
   onQuantityChange: (productId: string, newQuantity: number) => void;
   onCheckout: () => void;
-  onCustomerSelect: (customerId: string | null) => void;
 }
 
-export function OrderSummary({ items, customers, selectedCustomerId, onItemRemove, onQuantityChange, onCheckout, onCustomerSelect }: OrderSummaryProps) {
+export function OrderSummary({ items, onItemRemove, onQuantityChange, onCheckout }: OrderSummaryProps) {
   const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
-  const selectedCustomer = customers.find(c => c.id === selectedCustomerId);
-  const discountPercentage = selectedCustomer ? selectedCustomer.discount : 14.5;
+  const discountPercentage = 14.5;
   const discountAmount = subtotal * (discountPercentage / 100);
   const total = subtotal - discountAmount;
 
@@ -33,32 +28,6 @@ export function OrderSummary({ items, customers, selectedCustomerId, onItemRemov
       </CardHeader>
       <CardContent className="flex-grow p-6 overflow-y-auto">
         <div className="space-y-4">
-          <div className="space-y-2">
-            <label htmlFor="customer-select" className="text-sm font-medium">Pelanggan</label>
-            <Select
-              value={selectedCustomerId || 'umum'}
-              onValueChange={(value) => onCustomerSelect(value === 'umum' ? null : value)}
-            >
-              <SelectTrigger id="customer-select" className="w-full">
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                  <SelectValue placeholder="Pilih pelanggan..." />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="umum">Pelanggan Umum</SelectItem>
-                {customers.map((customer) => (
-                  <SelectItem key={customer.id} value={customer.id}>
-                    <div className="flex justify-between w-full items-center">
-                      <span>{customer.name}</span>
-                      {customer.discount > 0 && <span className="text-xs text-muted-foreground flex items-center gap-1 bg-primary/10 text-primary px-2 py-0.5 rounded-full"><Percent className="h-3 w-3" /> {customer.discount}%</span>}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <Separator />
           {items.length === 0 ? (
             <p className="text-center text-muted-foreground py-10">
               Belum ada item yang dipilih.
