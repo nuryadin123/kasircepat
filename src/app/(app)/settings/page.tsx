@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Header } from '@/components/shared/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,7 +9,20 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/shared/theme-toggle';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Trash2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { db } from '@/lib/firebase';
+import { collection, getDocs, writeBatch, doc } from 'firebase/firestore';
 
 const STORE_NAME_KEY = 'storeName';
 const STORE_ADDRESS_KEY = 'storeAddress';
@@ -18,7 +32,9 @@ export default function SettingsPage() {
   const [storeAddress, setStoreAddress] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
 
   useEffect(() => {
     // Load settings from localStorage
@@ -47,6 +63,43 @@ export default function SettingsPage() {
     }, 500);
   };
   
+  const handleDeleteAllData = async () => {
+    setIsDeleting(true);
+    try {
+      const collectionsToDelete = ['products', 'customers', 'sales', 'cash-flow'];
+      const batch = writeBatch(db);
+
+      for (const collectionName of collectionsToDelete) {
+        const querySnapshot = await getDocs(collection(db, collectionName));
+        querySnapshot.forEach((doc) => {
+          batch.delete(doc.ref);
+        });
+      }
+      
+      // Also reset the sales counter
+      const counterRef = doc(db, 'counters', 'sales');
+      batch.set(counterRef, { lastNumber: 0 });
+
+      await batch.commit();
+
+      toast({
+        title: 'Sukses',
+        description: 'Semua data transaksi dan riwayat telah berhasil dihapus.',
+      });
+
+      router.refresh(); // Refresh data on all pages
+    } catch (error) {
+      console.error("Error deleting all data:", error);
+      toast({
+        title: 'Error',
+        description: 'Gagal menghapus data. Silakan coba lagi.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (isLoading) {
       return (
            <>
@@ -105,6 +158,44 @@ export default function SettingsPage() {
           <CardContent className="flex items-center gap-4">
              <Label>Mode Gelap/Terang</Label>
              <ThemeToggle />
+          </CardContent>
+        </Card>
+
+        <Card className="border-destructive">
+          <CardHeader>
+            <CardTitle className="text-destructive">Zona Berbahaya</CardTitle>
+            <CardDescription>
+              Tindakan di area ini tidak dapat dibatalkan. Lanjutkan dengan hati-hati.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+             <AlertDialog>
+                <AlertDialogTrigger asChild>
+                    <Button variant="destructive">
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Hapus Semua Data
+                    </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                    <AlertDialogTitle>Apakah Anda benar-benar yakin?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Tindakan ini tidak dapat dibatalkan. Ini akan menghapus semua produk, penjualan, pelanggan, dan data arus kas secara permanen dari database.
+                    </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                    <AlertDialogCancel disabled={isDeleting}>Batal</AlertDialogCancel>
+                    <AlertDialogAction
+                        disabled={isDeleting}
+                        onClick={handleDeleteAllData}
+                        className="bg-destructive hover:bg-destructive/90"
+                    >
+                        {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        Ya, Hapus Semua Data
+                    </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
           </CardContent>
         </Card>
       </div>
