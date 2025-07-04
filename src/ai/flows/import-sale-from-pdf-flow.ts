@@ -39,6 +39,7 @@ const prompt = ai.definePrompt({
   name: 'importSaleFromPdfPrompt',
   input: {schema: ImportSaleInputSchema},
   output: {schema: ImportSaleOutputSchema},
+  model: 'googleai/gemini-1.5-flash-latest', // Use a more capable model for document analysis
   prompt: `You are an intelligent data entry assistant for a point-of-sale application.
 Your task is to analyze the provided PDF, which is a sales receipt or invoice, and extract the transaction details.
 
@@ -47,6 +48,7 @@ Your task is to analyze the provided PDF, which is a sales receipt or invoice, a
 - Do not extract totals, subtotals, taxes, or discounts. Only extract the individual line items.
 - Structure the extracted information into the required JSON format.
 - If you cannot determine a specific value for a field (e.g., quantity is not listed, assume 1), make a reasonable assumption.
+- It is crucial that you analyze the document provided. If the PDF does not appear to be a receipt or invoice, or if no line items can be found, you MUST return an empty list for the 'items' field.
 
 PDF for analysis: {{media url=pdfDataUri}}`,
 });
@@ -59,6 +61,13 @@ const importSaleFromPdfFlow = ai.defineFlow(
   },
   async (input) => {
     const {output} = await prompt(input);
-    return output!;
+    
+    if (!output) {
+      // This case handles when the model fails to produce a parsable JSON output.
+      // We can throw an error that will be caught by the UI.
+      throw new Error('AI gagal mem-parsing respons. Pastikan PDF adalah struk yang valid.');
+    }
+
+    return output;
   }
 );
