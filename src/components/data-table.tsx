@@ -13,9 +13,9 @@ import { Button } from '@/components/ui/button';
 
 interface DataTableProps<TData> {
   columns: {
-    accessorKey: keyof TData;
+    accessorKey: string;
     header: string;
-    cell?: (row: TData) => React.ReactNode;
+    cell?: (row: TData, index: number) => React.ReactNode;
   }[];
   data: TData[];
   actions?: (row: TData) => React.ReactNode;
@@ -41,13 +41,13 @@ export function DataTable<TData extends { id: string }>({
         </TableHeader>
         <TableBody>
           {data?.length ? (
-            data.map((row) => (
+            data.map((row, index) => (
               <TableRow key={row.id}>
                 {columns.map((column) => (
                   <TableCell key={column.accessorKey as string}>
                     {column.cell
-                      ? column.cell(row)
-                      : (row[column.accessorKey] as React.ReactNode)}
+                      ? column.cell(row, index)
+                      : (row[column.accessorKey as keyof TData] as React.ReactNode)}
                   </TableCell>
                 ))}
                 {actions && (

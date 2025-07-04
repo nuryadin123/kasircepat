@@ -5,6 +5,11 @@ import { ProductActions } from './product-actions';
 
 export const columns = [
   {
+    accessorKey: 'no',
+    header: 'No.',
+    cell: (row: Product, index: number) => index + 1,
+  },
+  {
     accessorKey: 'name',
     header: 'Nama Produk',
   },
