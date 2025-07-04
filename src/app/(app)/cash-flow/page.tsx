@@ -1,20 +1,36 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Header } from '@/components/shared/header';
 import { Button } from '@/components/ui/button';
-import { ArrowDownLeft, ArrowUpRight, PlusCircle, Scale, Loader2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { ArrowDownLeft, ArrowUpRight, PlusCircle, Scale, Loader2, Trash2 } from 'lucide-react';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, orderBy, query } from 'firebase/firestore';
+import { collection, getDocs, orderBy, query, writeBatch } from 'firebase/firestore';
 import type { CashFlowEntry } from '@/types';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { CashFlowFormDialog } from '@/components/cash-flow/cash-flow-form-dialog';
 import { CashFlowTable } from '@/components/cash-flow/cash-flow-table';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 export default function CashFlowPage() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeletingAll, setIsDeletingAll] = useState(false);
+  const router = useRouter();
+  const { toast } = useToast();
   const [data, setData] = useState<{
     entries: CashFlowEntry[];
     totalIncome: number;
@@ -81,6 +97,37 @@ export default function CashFlowPage() {
 
     getCashFlowData();
   }, []);
+  
+  const handleDeleteAllEntries = async () => {
+    setIsDeletingAll(true);
+    try {
+      const cashFlowCol = collection(db, 'cash-flow');
+      const cashFlowSnapshot = await getDocs(cashFlowCol);
+      if (cashFlowSnapshot.empty) {
+        toast({ title: 'Tidak Ada Entri', description: 'Tidak ada entri arus kas manual untuk dihapus.' });
+        return;
+      }
+
+      const batch = writeBatch(db);
+      cashFlowSnapshot.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+
+      await batch.commit();
+
+      toast({ title: 'Sukses', description: 'Semua entri arus kas manual berhasil dihapus.' });
+      router.refresh();
+    } catch (error) {
+      console.error("Failed to delete all manual cash flow entries:", error);
+      toast({
+        title: 'Error',
+        description: 'Gagal menghapus semua entri arus kas manual.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeletingAll(false);
+    }
+  };
 
   if (isLoading || !data) {
     return (
@@ -118,6 +165,35 @@ export default function CashFlowPage() {
               Pengeluaran
             </Button>
           </CashFlowFormDialog>
+           {userRole === 'admin' && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" className="w-full">
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Hapus Semua
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Apakah Anda benar-benar yakin?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Tindakan ini akan menghapus SEMUA entri arus kas manual (pemasukan dan pengeluaran yang Anda catat sendiri). Entri yang dibuat secara otomatis dari penjualan tidak akan terpengaruh. Aksi ini tidak dapat dibatalkan.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={isDeletingAll}>Batal</AlertDialogCancel>
+                  <AlertDialogAction
+                    disabled={isDeletingAll}
+                    onClick={handleDeleteAllEntries}
+                    className="bg-destructive hover:bg-destructive/90"
+                  >
+                    {isDeletingAll ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    Ya, Hapus Semua
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
       </div>
       <div className={cn("grid gap-4 mt-4", userRole === 'admin' && 'md:grid-cols-3')}>
