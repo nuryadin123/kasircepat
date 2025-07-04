@@ -329,32 +329,34 @@ function SalesPageContent() {
   };
   
   const handlePdfImport = (data: ImportSaleOutput) => {
+    // Build maps for efficient lookup, normalizing keys to be case-insensitive and trimmed.
     const productMapBySku = new Map<string, Product>();
     const productMapByName = new Map<string, Product>();
     products.forEach(p => {
       if (p.sku) {
-        productMapBySku.set(p.sku.toLowerCase(), p);
+        productMapBySku.set(p.sku.trim().toLowerCase(), p);
       }
-      productMapByName.set(p.name.toLowerCase(), p);
+      productMapByName.set(p.name.trim().toLowerCase(), p);
     });
 
     let matchedBySkuCount = 0;
     let matchedByNameCount = 0;
+    const unmatchedItems: string[] = [];
 
     const newCartItems: CartItemWithId[] = data.items.map(item => {
       let matchedProduct: Product | undefined = undefined;
 
-      // 1. Try to match by SKU first
+      // 1. Try to match by SKU first (case-insensitive, trimmed)
       if (item.sku) {
-        matchedProduct = productMapBySku.get(item.sku.toLowerCase());
+        matchedProduct = productMapBySku.get(item.sku.trim().toLowerCase());
         if (matchedProduct) {
           matchedBySkuCount++;
         }
       }
 
-      // 2. If no SKU match, fall back to matching by name
+      // 2. If no SKU match, fall back to matching by name (case-insensitive, trimmed)
       if (!matchedProduct) {
-        matchedProduct = productMapByName.get(item.name.toLowerCase());
+        matchedProduct = productMapByName.get(item.name.trim().toLowerCase());
         if (matchedProduct) {
           matchedByNameCount++;
         }
@@ -372,7 +374,8 @@ function SalesPageContent() {
           quantity: item.quantity,
         };
       } else {
-        // No match found, use PDF data
+        // No match found, add to unmatched list and use PDF data as fallback
+        unmatchedItems.push(`- ${item.name} ${item.sku ? `(SKU: ${item.sku})` : ''}`);
         return {
           cartId: crypto.randomUUID(),
           productId: `pdf-import-${item.name.replace(/\s+/g, '-').toLowerCase()}`,
@@ -394,21 +397,25 @@ function SalesPageContent() {
       }
     }
     
-    const unmatchedCount = newCartItems.length - matchedBySkuCount - matchedByNameCount;
-    const descriptionParts = [`${newCartItems.length} item berhasil diekstrak.`];
-    if (matchedBySkuCount > 0) {
-      descriptionParts.push(`${matchedBySkuCount} cocok berdasarkan SKU.`);
-    }
-    if (matchedByNameCount > 0) {
-      descriptionParts.push(`${matchedByNameCount} cocok berdasarkan nama.`);
-    }
-    if (unmatchedCount > 0) {
-      descriptionParts.push(`${unmatchedCount} tidak ditemukan.`);
+    // Build a detailed toast message
+    const totalImported = newCartItems.length;
+    let toastDescription = `${totalImported} item berhasil diekstrak.`;
+
+    if (matchedBySkuCount > 0) toastDescription += ` ${matchedBySkuCount} cocok via SKU.`;
+    if (matchedByNameCount > 0) toastDescription += ` ${matchedByNameCount} cocok via Nama.`;
+
+    if (unmatchedItems.length > 0) {
+      toastDescription += `\n\nProduk tidak ditemukan di database:\n${unmatchedItems.join('\n')}`;
     }
 
     toast({
       title: 'Impor Selesai',
-      description: descriptionParts.join(' '),
+      description: (
+        <div className="whitespace-pre-wrap text-sm">
+            {toastDescription}
+        </div>
+      ),
+      duration: unmatchedItems.length > 0 ? 12000 : 5000, // Longer duration if there are unmatched items
     });
   };
 
