@@ -10,10 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ReceiptDialog } from '@/components/sales/receipt-dialog';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, doc, runTransaction, getDoc, query, where } from 'firebase/firestore';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
-import { Loader2, ShoppingBag } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 const DISCOUNT_PERCENTAGE_KEY = 'discountPercentage';
 
@@ -28,7 +25,6 @@ function SalesPageContent() {
   const [lastSale, setLastSale] = useState<Sale | null>(null);
   const [discountPercentage, setDiscountPercentage] = useState(14.5);
   const { toast } = useToast();
-  const isMobile = useIsMobile();
   const [hasMounted, setHasMounted] = useState(false);
   const [editingSaleId, setEditingSaleId] = useState<string | null>(null);
   const [isLoadingSale, setIsLoadingSale] = useState(false);
@@ -328,11 +324,6 @@ function SalesPageContent() {
     }
   };
   
-  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const discountAmount = subtotal * (discountPercentage / 100);
-  const total = subtotal - discountAmount;
-
   if (!hasMounted || isLoadingSale) {
     return (
         <>
@@ -349,35 +340,11 @@ function SalesPageContent() {
   return (
     <>
       <Header title={editingSaleId ? 'Edit Penjualan' : 'Pemrosesan Penjualan'} />
-      <div className="grid md:grid-cols-[1fr_400px] gap-8 items-start mt-4 pb-24 md:pb-0">
+      <div className="max-w-4xl mx-auto w-full flex flex-col gap-8 mt-4 pb-24">
         <ProductSelector products={products} onProductSelect={handleProductSelect} />
         
-        <div className="hidden md:block sticky top-4">
-          <OrderSummary 
-            items={cart}
-            onItemRemove={handleItemRemove}
-            onQuantityChange={handleQuantityChange}
-            onCheckout={handleCheckout}
-            discountPercentage={discountPercentage}
-            isEditing={!!editingSaleId}
-          />
-        </div>
-      </div>
-      
-      {isMobile && cart.length > 0 && (
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button className="fixed bottom-4 inset-x-4 h-auto p-3 rounded-lg shadow-lg z-20 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <ShoppingBag className="h-6 w-6" />
-                <span className="font-semibold">{totalItems} Item</span>
-              </div>
-              <span className="font-bold text-base">Rp{new Intl.NumberFormat('id-ID').format(total)}</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="bottom" className="h-[90vh] flex flex-col p-0">
-            <SheetTitle className="sr-only">Ringkasan Pesanan</SheetTitle>
-             <OrderSummary 
+        {cart.length > 0 && (
+            <OrderSummary 
               items={cart}
               onItemRemove={handleItemRemove}
               onQuantityChange={handleQuantityChange}
@@ -385,9 +352,8 @@ function SalesPageContent() {
               discountPercentage={discountPercentage}
               isEditing={!!editingSaleId}
             />
-          </SheetContent>
-        </Sheet>
-      )}
+        )}
+      </div>
 
       <ReceiptDialog 
         isOpen={isReceiptOpen}
