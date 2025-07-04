@@ -56,11 +56,8 @@ export function ProductSelector({ products, onProductSelect }: ProductSelectorPr
               <Card key={product.id} className="overflow-hidden flex flex-col transition-all hover:shadow-lg hover:-translate-y-1">
                 <CardContent className="p-4 flex-grow">
                   <h3 className="font-semibold">{product.name}</h3>
-                  <p className={cn(
-                    "text-sm text-muted-foreground",
-                    product.stock <= 0 && "text-destructive"
-                  )}>
-                    Stok: {product.stock > 0 ? product.stock : 'Habis'}
+                  <p className="text-sm text-muted-foreground">
+                    Rp{new Intl.NumberFormat('id-ID').format(product.price)}
                   </p>
                 </CardContent>
                 <CardFooter className="p-4 pt-0">
