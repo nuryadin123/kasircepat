@@ -154,18 +154,24 @@ function SalesPageContent() {
             const originalSaleData = originalSaleSnap.data();
 
             await runTransaction(db, async (transaction) => {
+                // Reads must be first
+                let cogsSnap;
+                if (originalSaleData.transactionId) {
+                    const cogsQuery = query(collection(db, 'cash-flow'), where('description', '==', `Biaya Pokok Penjualan ${originalSaleData.transactionId}`));
+                    cogsSnap = await transaction.get(cogsQuery);
+                }
+
+                // Prepare data for writes
                 const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
                 const discountAmount = subtotal * (discountPercentage / 100);
                 const total = subtotal - discountAmount;
                 const totalCost = cart.reduce((acc, item) => acc + (item.cost || 0) * item.quantity, 0);
 
+                // Now perform writes
                 transaction.update(saleRef, { items: cart, subtotal, discountAmount, total });
                 
                 if (originalSaleData.transactionId) {
-                    const cogsQuery = query(collection(db, 'cash-flow'), where('description', '==', `Biaya Pokok Penjualan ${originalSaleData.transactionId}`));
-                    const cogsSnap = await transaction.get(cogsQuery);
-                    
-                    if (!cogsSnap.empty) {
+                    if (cogsSnap && !cogsSnap.empty) {
                         const cogsDocRef = cogsSnap.docs[0].ref;
                         if (totalCost > 0) {
                             transaction.update(cogsDocRef, { amount: totalCost, date: new Date().toISOString() });
