@@ -59,10 +59,6 @@ export function SalesImportDialog({ onImportSuccess, children }: SalesImportDial
         }
 
         onImportSuccess(result);
-        toast({
-          title: 'Impor Berhasil',
-          description: `${result.items.length} item berhasil diekstrak dan ditambahkan ke pesanan.`,
-        });
         setIsOpen(false);
         setFile(null);
       } catch (error: any) {

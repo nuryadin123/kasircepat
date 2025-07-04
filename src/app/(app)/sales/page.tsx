@@ -328,25 +328,57 @@ function SalesPageContent() {
   };
   
   const handlePdfImport = (data: ImportSaleOutput) => {
-    const newCartItems: CartItemWithId[] = data.items.map(item => ({
-      cartId: crypto.randomUUID(),
-      // Use a placeholder product ID as we can't know the real one from a PDF
-      productId: `pdf-import-${item.name.replace(/\s+/g, '-').toLowerCase()}`,
-      name: item.name,
-      price: item.price,
-      quantity: item.quantity,
-      cost: 0, // Cost is unknown from a receipt, assume 0 for profit calculation
-    }));
+    const productMap = new Map<string, Product>();
+    products.forEach(p => productMap.set(p.name.toLowerCase(), p));
 
+    const newCartItems: CartItemWithId[] = data.items.map(item => {
+      const matchedProduct = productMap.get(item.name.toLowerCase());
+
+      if (matchedProduct) {
+        return {
+          cartId: crypto.randomUUID(),
+          productId: matchedProduct.id,
+          name: matchedProduct.name,
+          price: matchedProduct.price,
+          cost: matchedProduct.cost,
+          quantity: item.quantity,
+        };
+      } else {
+        return {
+          cartId: crypto.randomUUID(),
+          productId: `pdf-import-${item.name.replace(/\s+/g, '-').toLowerCase()}`,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          cost: 0,
+        };
+      }
+    });
+    
     setCart(prevCart => [...prevCart, ...newCartItems]);
 
     if (data.date) {
       const importedDate = new Date(data.date);
-      // Check if the date from PDF is valid before setting it
       if (!isNaN(importedDate.getTime())) {
         setTransactionDate(importedDate);
       }
     }
+
+    const matchedCount = newCartItems.filter(item => !item.productId.startsWith('pdf-import-')).length;
+    const unmatchedCount = newCartItems.length - matchedCount;
+
+    let description = `${newCartItems.length} item berhasil diekstrak.`;
+    if (matchedCount > 0) {
+        description += ` ${matchedCount} item dicocokkan dengan produk yang ada.`
+    }
+     if (unmatchedCount > 0) {
+        description += ` ${unmatchedCount} item tidak ditemukan dan menggunakan harga dari PDF.`
+    }
+
+    toast({
+        title: 'Impor Selesai',
+        description: description,
+    });
   };
 
   if (!hasMounted || isLoadingSale) {
