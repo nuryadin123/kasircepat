@@ -15,6 +15,7 @@ export type SaleItem = {
   price: number;
   quantity: number;
   cost: number;
+  isUnmatched?: boolean;
 };
 
 export type Sale = {

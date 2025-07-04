@@ -372,6 +372,7 @@ function SalesPageContent() {
           price: matchedProduct.price,
           cost: matchedProduct.cost,
           quantity: item.quantity,
+          isUnmatched: false,
         };
       } else {
         // No match found, add to unmatched list and use PDF data as fallback
@@ -384,6 +385,7 @@ function SalesPageContent() {
           price: item.price,
           quantity: item.quantity,
           cost: 0,
+          isUnmatched: true,
         };
       }
     });
@@ -405,7 +407,7 @@ function SalesPageContent() {
     if (matchedByNameCount > 0) toastDescription += ` ${matchedByNameCount} cocok via Nama.`;
 
     if (unmatchedItems.length > 0) {
-      toastDescription += `\n\nProduk tidak ditemukan di database:\n${unmatchedItems.join('\n')}`;
+      toastDescription += `\n\nProduk berikut tidak ditemukan di database:\n${unmatchedItems.join('\n')}\n\nItem ini ditambahkan menggunakan data dari PDF. Harap periksa kembali detailnya sebelum checkout.`;
     }
 
     toast({
