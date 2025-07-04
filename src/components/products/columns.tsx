@@ -1,18 +1,12 @@
 'use client';
 
 import { Product } from '@/types';
-import { Badge } from '@/components/ui/badge';
 import { ProductActions } from './product-actions';
 
 export const columns = [
   {
     accessorKey: 'name',
     header: 'Nama Produk',
-  },
-  {
-    accessorKey: 'category',
-    header: 'Kategori',
-    cell: (row: Product) => <Badge variant="outline">{row.category}</Badge>,
   },
   {
     accessorKey: 'price',

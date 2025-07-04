@@ -75,7 +75,6 @@ export function ProductImportDialog({ children }: ProductImportDialogProps) {
                 name: String(name),
                 price: Number(price),
                 cost: Number(cost),
-                category: row['kategori'] || row['Kategori'] || row['category'] || 'Umum',
                 stock: row['stok'] || row['Stok'] || row['stock'] || 0,
                 createdAt: new Date().toISOString(),
               });
@@ -141,7 +140,7 @@ export function ProductImportDialog({ children }: ProductImportDialogProps) {
         <DialogHeader>
           <DialogTitle>Impor Produk dari Excel</DialogTitle>
           <DialogDescription>
-            Pilih file .xlsx untuk mengimpor data produk secara massal. Pastikan file Anda memiliki kolom: `nama prodak`, `harga jual`, dan `harga modal`. Kolom opsional: `kategori`, `stok`.
+            Pilih file .xlsx untuk mengimpor data produk secara massal. Pastikan file Anda memiliki kolom: `nama prodak`, `harga jual`, dan `harga modal`. Kolom opsional: `stok`.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
