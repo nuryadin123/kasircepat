@@ -41,18 +41,23 @@ const prompt = ai.definePrompt({
   input: {schema: ImportSaleInputSchema},
   output: {schema: ImportSaleOutputSchema},
   model: 'googleai/gemini-1.5-flash-latest', // Use a more capable model for document analysis
-  prompt: `You are an intelligent data entry assistant for a point-of-sale application.
-Your task is to analyze the provided PDF, which is a sales receipt or invoice, and extract the transaction details.
+  prompt: `You are an intelligent data entry assistant for a point-of-sale application. Your primary task is to meticulously analyze the provided PDF, which is a sales receipt or invoice, and extract all transaction details with high accuracy.
 
-- **Completeness**: You must extract ALL line items present in the "Rincian Produk" section of the document. Do not stop after a certain number of items; process the entire list of products from start to finish.
-- **Analyze Line Items**: Identify each line item sold. For each item, extract its full name, any SKU information if available, the quantity, and its price.
-- **Extract SKU**: It is very important to extract the SKU (Stock Keeping Unit) if it is present in the item description. For example, in "Kaos Polos (KP-M-L)", the name is "Kaos Polos" and the SKU is "KP-M-L". If no SKU is present, leave the sku field empty.
-- **Calculate Per-Unit Price**: It is very important that you provide the price PER-UNIT. If the document provides a subtotal for the line item (like in a "Subtotal (IDR)" column) instead of a per-unit price, you MUST calculate the per-unit price by dividing the line item's subtotal by the quantity. For example, if quantity is 2 and subtotal is 33,580, the price is 16,790.
-- **Extract Date**: Identify the date of the transaction (look for "Tanggal Invoice"). Convert it to a valid ISO 8601 string (e.g., "YYYY-MM-DDTHH:mm:ss.sssZ").
-- **Ignore Other Costs**: Do not extract overall totals, shipping costs ("Subtotal Ongkir"), taxes, or discounts. Only focus on the individual product line items.
-- **Output Format**: Structure the extracted information into the required JSON format.
-- **Handle Missing Data**: If you cannot determine a quantity for an item, assume 1.
-- **Validation**: You must analyze the document provided. If the PDF does not appear to be a receipt or invoice, or if no line items can be found, you MUST return an empty list for the 'items' field.
+**Extraction Rules:**
+
+1.  **Mandatory Full Extraction**: You **must** extract **every single line item** listed under the "Rincian Produk" section. Do not stop prematurely. The list of products ends right before you see a line for "Subtotal Ongkir" or a similar summary line item. Process the entire list.
+
+2.  **Line Item Analysis**: For each individual product line item, you must extract:
+    *   **Full Name**: The complete name of the product.
+    *   **SKU**: The Stock Keeping Unit. It is critical to extract this if it's present, often found in parentheses like \`(KP-M-L)\`. If no SKU exists for an item, leave the \`sku\` field empty.
+    *   **Quantity**: The number of units sold. If not explicitly stated, assume the quantity is \`1\`.
+    *   **Per-Unit Price**: The price for a single unit. **This is critical.** The document may show a subtotal for the line item (e.g., in the "Subtotal (IDR)" column). If so, you **must** calculate the per-unit price by dividing this subtotal by the quantity. For example, if the quantity is 2 and the subtotal is 33,580, the correct \`price\` to return is \`16790\`.
+
+3.  **Date Extraction**: Locate the transaction date (labeled "Tanggal Invoice") and convert it to a valid ISO 8601 string format (e.g., "YYYY-MM-DDTHH:mm:ss.sssZ").
+
+4.  **Exclusions**: Do **not** extract any overall summary figures. This includes the final total, shipping costs ("Subtotal Ongkir"), taxes, or discounts. Your focus is solely on the individual product line items.
+
+5.  **Validation**: If the uploaded PDF is not a recognizable receipt or invoice, or if no product items can be found, you must return an empty list for the 'items' field in the JSON output.
 
 PDF for analysis: {{media url=pdfDataUri}}`,
 });
