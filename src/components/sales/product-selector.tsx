@@ -8,6 +8,7 @@ import { Search, PlusCircle } from 'lucide-react';
 import { useState } from 'react';
 import { ScrollArea } from '../ui/scroll-area';
 import { Skeleton } from '../ui/skeleton';
+import { cn } from '@/lib/utils';
 
 interface ProductSelectorProps {
   products: Product[];
@@ -55,7 +56,12 @@ export function ProductSelector({ products, onProductSelect }: ProductSelectorPr
               <Card key={product.id} className="overflow-hidden flex flex-col transition-all hover:shadow-lg hover:-translate-y-1">
                 <CardContent className="p-4 flex-grow">
                   <h3 className="font-semibold">{product.name}</h3>
-                  <p className="text-sm text-muted-foreground">Stok: {product.stock}</p>
+                  <p className={cn(
+                    "text-sm text-muted-foreground",
+                    product.stock <= 0 && "text-destructive"
+                  )}>
+                    Stok: {product.stock > 0 ? product.stock : 'Habis'}
+                  </p>
                 </CardContent>
                 <CardFooter className="p-4 pt-0">
                   <Button

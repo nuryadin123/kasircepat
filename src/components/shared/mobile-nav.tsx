@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { PanelLeft, Terminal } from 'lucide-react';
+import { PanelLeft, Terminal, Settings } from 'lucide-react';
 import { navItems } from './sidebar';
 import { cn } from '@/lib/utils';
 
@@ -25,7 +25,7 @@ export function MobileNav() {
           <span className="sr-only">Buka Menu</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="sm:max-w-xs">
+      <SheetContent side="left" className="sm:max-w-xs flex flex-col">
         <nav className="grid gap-6 text-lg font-medium">
           <Link
             href="/dashboard"
@@ -49,6 +49,19 @@ export function MobileNav() {
               {item.label}
             </Link>
           ))}
+        </nav>
+        <nav className="mt-auto grid gap-6 text-lg font-medium">
+            <Link
+              href="/settings"
+              onClick={handleLinkClick}
+              className={cn(
+                'flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground',
+                pathname === '/settings' && 'text-foreground'
+              )}
+            >
+              <Settings className="h-5 w-5" />
+              Pengaturan
+            </Link>
         </nav>
       </SheetContent>
     </Sheet>
