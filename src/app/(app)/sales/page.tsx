@@ -148,18 +148,16 @@ function SalesPageContent() {
         try {
             await runTransaction(db, async (transaction) => {
                 const saleRef = doc(db, 'sales', editingSaleId);
+                
+                // --- READ PHASE ---
                 const saleSnap = await transaction.get(saleRef);
-
                 if (!saleSnap.exists()) {
                     throw new Error("Sale document not found.");
                 }
                 const originalSaleData = saleSnap.data();
 
-                // All reads must happen before writes.
-                // READ 1: sale data (done above)
-                // READ 2: Find the corresponding COGS entry in cash-flow
                 let cogsDocRef: DocumentReference | null = null;
-
+                // Only query if there's a transaction ID
                 if (originalSaleData.transactionId) {
                     const cogsQuery = query(
                         collection(db, 'cash-flow'), 
@@ -167,19 +165,18 @@ function SalesPageContent() {
                     );
                     const cogsSnap = await transaction.get(cogsQuery);
                     if (!cogsSnap.empty) {
-                        // Assuming there's only one such entry
                         cogsDocRef = cogsSnap.docs[0].ref;
                     }
                 }
 
-                // All reads are complete. Now, prepare data for writes.
+                // --- WRITE PHASE ---
                 const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
                 const discountAmount = subtotal * (discountPercentage / 100);
                 const total = subtotal - discountAmount;
                 const totalCost = cart.reduce((acc, item) => acc + (item.cost || 0) * item.quantity, 0);
                 const writeTime = new Date();
 
-                // WRITE 1: Update the sale document itself.
+                // 1. Update the sale document
                 transaction.update(saleRef, { 
                     items: cart, 
                     subtotal, 
@@ -188,8 +185,8 @@ function SalesPageContent() {
                     date: writeTime 
                 });
 
-                // WRITE 2: Update, create, or delete the COGS entry.
-                if (cogsDocRef) { // An old COGS entry exists
+                // 2. Update, create, or delete the COGS cash-flow entry
+                if (cogsDocRef) { // COGS entry from original sale exists
                     if (totalCost > 0) {
                         // Update it with the new cost
                         transaction.update(cogsDocRef, { amount: totalCost, date: writeTime });
