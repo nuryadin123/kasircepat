@@ -2,7 +2,7 @@ import { Header } from "@/components/shared/header";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { SalesChart } from "@/components/dashboard/sales-chart";
 import { RecentSales } from "@/components/dashboard/recent-sales";
-import { DollarSign, CreditCard, Scale } from "lucide-react";
+import { DollarSign, ArrowDownLeft, Scale } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, orderBy, query } from "firebase/firestore";
 import type { Sale } from "@/types";
@@ -17,10 +17,6 @@ async function getDashboardData() {
   ]);
 
   const allSalesDocs = salesSnapshot.docs;
-  
-  // Sales stats
-  const totalRevenue = allSalesDocs.reduce((acc, doc) => acc + doc.data().total, 0);
-  const totalSales = allSalesDocs.length;
   
   const recentSales = allSalesDocs.slice(0, 5).map(doc => {
       const data = doc.data();
@@ -54,12 +50,12 @@ async function getDashboardData() {
 
   const netCashFlow = totalIncome - totalExpense;
 
-  return { totalRevenue, totalSales, netCashFlow, recentSales };
+  return { totalRevenue: totalIncome, totalExpense, netCashFlow, recentSales };
 }
 
 
 export default async function DashboardPage() {
-  const { totalRevenue, totalSales, netCashFlow, recentSales } = await getDashboardData();
+  const { totalRevenue, totalExpense, netCashFlow, recentSales } = await getDashboardData();
   
   const chartData = [...recentSales].reverse().map(sale => ({
       name: new Date(sale.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }),
@@ -75,11 +71,13 @@ export default async function DashboardPage() {
             title="Total Pendapatan"
             value={`Rp${new Intl.NumberFormat('id-ID').format(totalRevenue)}`}
             icon={DollarSign}
+            className="border-green-500"
           />
           <StatCard 
-            title="Total Penjualan"
-            value={`+${totalSales}`}
-            icon={CreditCard}
+            title="Total Pengeluaran"
+            value={`Rp${new Intl.NumberFormat('id-ID').format(totalExpense)}`}
+            icon={ArrowDownLeft}
+            className="border-red-500"
           />
           <StatCard 
             title="Arus Kas Bersih"
