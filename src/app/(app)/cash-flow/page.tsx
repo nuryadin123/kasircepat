@@ -143,7 +143,7 @@ export default function CashFlowPage() {
         )}
       </div>
       <div className="mt-4">
-        <CashFlowTable data={displayedEntries} expenseDescriptions={expenseDescriptions} />
+        <CashFlowTable data={displayedEntries} expenseDescriptions={expenseDescriptions} userRole={userRole} />
       </div>
     </>
   );

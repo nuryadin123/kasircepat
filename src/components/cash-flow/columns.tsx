@@ -89,9 +89,17 @@ export const columns = [
   },
 ];
 
-export const cashFlowTableActions = (allExpenseDescriptions: string[]) => (row: CashFlowEntry) => {
+export const cashFlowTableActions = (allExpenseDescriptions: string[], userRole: string | null) => (row: CashFlowEntry) => {
+  // If user is not an admin, do not show any actions.
+  if (userRole !== 'admin') {
+    return null;
+  }
+
+  // For admins, hide actions for auto-generated entries.
   if (row.description.startsWith('Penjualan') || row.description.startsWith('Biaya Pokok Penjualan')) {
     return null;
   }
+
+  // Only show actions for manual entries for admins.
   return <CashFlowActions entry={row} allExpenseDescriptions={allExpenseDescriptions} />;
 };
