@@ -54,45 +54,45 @@ export function ReceiptDialog({ isOpen, onClose, sale }: ReceiptDialogProps) {
           </DialogHeader>
           <div className="py-2 font-mono text-sm">
               <div className="space-y-2">
-                  <div className="text-center text-muted-foreground">
-                      <p className="font-bold text-black">{storeName}</p>
-                      <p className="text-xs text-black">{new Date(sale.date).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short'})}</p>
-                      <p className="text-xs text-black truncate">No: {sale.transactionId || sale.id}</p>
+                  <div className="text-center">
+                      <p className="font-bold text-foreground print:text-black">{storeName}</p>
+                      <p className="text-xs text-muted-foreground print:text-black">{new Date(sale.date).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short'})}</p>
+                      <p className="text-xs text-muted-foreground print:text-black truncate">No: {sale.transactionId || sale.id}</p>
                   </div>
-                  <Separator className="my-2 border-dashed" />
+                  <Separator className="my-2 border-dashed print:border-black" />
                   <div className="space-y-2">
                       {sale.items.map((item) => (
                           <div key={item.productId} className="flex">
                               <div className="flex-1">
-                                  <p className="font-medium">{item.name}</p>
-                                  <p className="text-muted-foreground">
+                                  <p className="font-medium text-foreground print:text-black">{item.name}</p>
+                                  <p className="text-muted-foreground print:text-black">
                                       {item.quantity} x Rp{new Intl.NumberFormat('id-ID').format(item.price)}
                                   </p>
                               </div>
-                              <p>Rp{new Intl.NumberFormat('id-ID').format(item.price * item.quantity)}</p>
+                              <p className="text-foreground print:text-black">Rp{new Intl.NumberFormat('id-ID').format(item.price * item.quantity)}</p>
                           </div>
                       ))}
                   </div>
-                  <Separator className="my-2 border-dashed" />
+                  <Separator className="my-2 border-dashed print:border-black" />
                    <div className="space-y-1">
                       <div className="flex justify-between">
-                          <p className="text-muted-foreground">Subtotal</p>
-                          <p>Rp{new Intl.NumberFormat('id-ID').format(subtotal)}</p>
+                          <p className="text-muted-foreground print:text-black">Subtotal</p>
+                          <p className="text-foreground print:text-black">Rp{new Intl.NumberFormat('id-ID').format(subtotal)}</p>
                       </div>
                       {discountAmount > 0 && (
                         <div className="flex justify-between">
-                            <p className="text-muted-foreground">Diskon</p>
-                            <p>-Rp{new Intl.NumberFormat('id-ID').format(discountAmount)}</p>
+                            <p className="text-muted-foreground print:text-black">Diskon</p>
+                            <p className="text-foreground print:text-black">-Rp{new Intl.NumberFormat('id-ID').format(discountAmount)}</p>
                         </div>
                       )}
                   </div>
-                  <Separator className="my-2 border-dashed" />
+                  <Separator className="my-2 border-dashed print:border-black" />
                   <div className="flex justify-between font-bold text-base">
-                      <p>Total</p>
-                      <p>Rp{new Intl.NumberFormat('id-ID').format(total)}</p>
+                      <p className="text-foreground print:text-black">Total</p>
+                      <p className="text-foreground print:text-black">Rp{new Intl.NumberFormat('id-ID').format(total)}</p>
                   </div>
-                  <div className="text-center text-muted-foreground mt-4 text-xs">
-                      <p>--- Terima Kasih ---</p>
+                  <div className="text-center mt-4 text-xs">
+                      <p className="text-muted-foreground print:text-black">--- Terima Kasih ---</p>
                   </div>
               </div>
           </div>
