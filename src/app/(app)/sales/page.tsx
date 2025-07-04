@@ -150,19 +150,32 @@ function SalesPageContent() {
 
   const handleProductSelect = (product: Product) => {
     setCart((prevCart) => {
-      const newCart = [
-        ...prevCart,
-        {
-          cartId: crypto.randomUUID(),
-          productId: product.id,
-          name: product.name,
-          sku: product.sku,
-          price: product.price,
-          quantity: 1,
-          cost: product.cost,
-        },
-      ];
-      return newCart;
+      const existingItem = prevCart.find(
+        (item) => item.productId === product.id
+      );
+
+      if (existingItem) {
+        // If item already exists, just increase the quantity
+        return prevCart.map((item) =>
+          item.productId === product.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+      } else {
+        // If item doesn't exist, add it to the cart
+        return [
+          ...prevCart,
+          {
+            cartId: crypto.randomUUID(),
+            productId: product.id,
+            name: product.name,
+            sku: product.sku,
+            price: product.price,
+            quantity: 1,
+            cost: product.cost,
+          },
+        ];
+      }
     });
   };
 
@@ -390,7 +403,27 @@ function SalesPageContent() {
       }
     });
 
-    setCart(prevCart => [...prevCart, ...newCartItems]);
+    setCart(prevCart => {
+      const updatedCart = [...prevCart];
+
+      newCartItems.forEach(newItem => {
+        const existingCartItemIndex = updatedCart.findIndex(
+          cartItem => cartItem.productId === newItem.productId
+        );
+
+        if (existingCartItemIndex !== -1) {
+          const existingItem = updatedCart[existingCartItemIndex];
+          updatedCart[existingCartItemIndex] = {
+            ...existingItem,
+            quantity: existingItem.quantity + newItem.quantity,
+          };
+        } else {
+          updatedCart.push(newItem);
+        }
+      });
+      
+      return updatedCart;
+    });
 
     if (data.date) {
       const importedDate = new Date(data.date);
@@ -400,7 +433,7 @@ function SalesPageContent() {
     }
     
     // Build a detailed toast message
-    const totalImported = newCartItems.length;
+    const totalImported = data.items.length;
     let toastDescription = `${totalImported} item berhasil diekstrak.`;
 
     if (matchedBySkuCount > 0) toastDescription += ` ${matchedBySkuCount} cocok via SKU.`;
