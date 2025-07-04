@@ -6,18 +6,24 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { Header } from '@/components/shared/header';
 import { Button } from '@/components/ui/button';
-import { Download, Loader2 } from 'lucide-react';
+import { Download, Loader2, Calendar as CalendarIcon } from 'lucide-react';
 import { DataTable } from '@/components/data-table';
 import { columns, saleActions } from '@/components/reports/columns';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, orderBy, query } from 'firebase/firestore';
 import type { Sale } from '@/types';
 import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+import type { DateRange } from 'react-day-picker';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 
 export default function ReportsPage() {
   const [sales, setSales] = useState<Sale[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
+  const [date, setDate] = useState<DateRange | undefined>();
   const router = useRouter();
   const { toast } = useToast();
   
@@ -51,7 +57,30 @@ export default function ReportsPage() {
     getSales();
   }, [router]);
   
-  const handleExportPDF = () => {
+  const filteredSales = sales.filter(sale => {
+    if (!date || !date.from) {
+      return true; // If no date range is selected, show all sales
+    }
+    const saleDate = new Date(sale.date);
+    const from = new Date(date.from);
+    from.setHours(0, 0, 0, 0);
+
+    // If 'to' is not selected, use 'from' as 'to' as well (single day selection)
+    const to = date.to ? new Date(date.to) : new Date(date.from);
+    to.setHours(23, 59, 59, 999);
+
+    return saleDate >= from && saleDate <= to;
+  });
+
+  const handleExportPDF = (dataToExport: Sale[]) => {
+    if (dataToExport.length === 0) {
+      toast({
+        title: "Tidak Ada Data",
+        description: "Tidak ada data penjualan pada rentang tanggal yang dipilih untuk diekspor.",
+        variant: "destructive",
+      });
+      return;
+    }
     setIsExporting(true);
     try {
         const doc = new jsPDF();
@@ -70,12 +99,19 @@ export default function ReportsPage() {
         doc.text('Laporan Penjualan', 14, 30);
         doc.setFontSize(10);
         doc.text(`Tanggal Dibuat: ${generatedDate}`, 14, 35);
+        if (date?.from) {
+             doc.text(
+                `Periode: ${format(date.from, "d LLL yyyy")} - ${format(date.to || date.from, "d LLL yyyy")}`,
+                14,
+                40
+            );
+        }
 
         // --- SUMMARY TABLE ---
         (doc as any).autoTable({
-            startY: 45,
+            startY: 48,
             head: [['No. Transaksi', 'Tanggal', 'Jumlah Item', 'Total']],
-            body: sales.map(sale => [
+            body: dataToExport.map(sale => [
                 sale.transactionId || sale.id.substring(0, 7).toUpperCase(),
                 new Date(sale.date).toLocaleString('id-ID'),
                 sale.items.reduce((sum, item) => sum + item.quantity, 0),
@@ -102,7 +138,7 @@ export default function ReportsPage() {
         doc.text('Detail Penjualan per Transaksi', 14, finalY);
         finalY += 10;
         
-        sales.forEach((sale, index) => {
+        dataToExport.forEach((sale, index) => {
             const itemsHeight = sale.items.length * 7;
             const summaryHeight = 25;
             const blockHeight = 15 + itemsHeight + summaryHeight;
@@ -220,19 +256,57 @@ export default function ReportsPage() {
   return (
     <>
       <Header title="Laporan Penjualan" />
-      <div className="flex items-center justify-between mt-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mt-4 gap-2">
         <h2 className="text-xl sm:text-2xl font-bold font-headline tracking-tight">Riwayat Penjualan</h2>
-        <Button variant="outline" onClick={handleExportPDF} disabled={isExporting || sales.length === 0}>
-           {isExporting ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Download className="mr-2 h-4 w-4" />
-          )}
-          {isExporting ? 'Mengekspor...' : 'Ekspor Laporan'}
-        </Button>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+             <Popover>
+                <PopoverTrigger asChild>
+                    <Button
+                        id="date"
+                        variant={"outline"}
+                        className={cn(
+                            "w-full sm:w-[260px] justify-start text-left font-normal",
+                            !date && "text-muted-foreground"
+                        )}
+                    >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {date?.from ? (
+                            date.to ? (
+                                <>
+                                    {format(date.from, "d LLL, y")} -{" "}
+                                    {format(date.to, "d LLL, y")}
+                                </>
+                            ) : (
+                                format(date.from, "d LLL, y")
+                            )
+                        ) : (
+                            <span>Pilih rentang tanggal</span>
+                        )}
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                    <Calendar
+                        initialFocus
+                        mode="range"
+                        defaultMonth={date?.from}
+                        selected={date}
+                        onSelect={setDate}
+                        numberOfMonths={2}
+                    />
+                </PopoverContent>
+            </Popover>
+            <Button variant="outline" onClick={() => handleExportPDF(filteredSales)} disabled={isExporting || filteredSales.length === 0}>
+                {isExporting ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                    <Download className="mr-2 h-4 w-4" />
+                )}
+                {isExporting ? 'Mengekspor...' : 'Ekspor'}
+            </Button>
+        </div>
       </div>
       <div className="mt-4">
-        <DataTable columns={columns} data={sales} actions={saleActions} />
+        <DataTable columns={columns} data={filteredSales} actions={saleActions} />
       </div>
     </>
   );
