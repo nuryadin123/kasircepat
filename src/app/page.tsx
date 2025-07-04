@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Loader2, Terminal } from 'lucide-react';
+import { Loader2, Calculator } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
 import type { User } from '@/types';
@@ -129,7 +129,7 @@ export default function AuthPage() {
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
              <div className="group flex h-12 w-12 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-10 md:w-10 md:text-base">
-              <Terminal className="h-5 w-5 transition-all group-hover:scale-110" />
+              <Calculator className="h-5 w-5 transition-all group-hover:scale-110" />
             </div>
           </div>
           <CardTitle className="font-headline text-2xl">Selamat Datang</CardTitle>

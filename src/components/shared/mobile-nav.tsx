@@ -3,9 +3,9 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { PanelLeft, Terminal, Settings } from 'lucide-react';
+import { PanelLeft, Calculator, Settings } from 'lucide-react';
 import { navItems } from './sidebar';
 import { cn } from '@/lib/utils';
 
@@ -61,7 +61,7 @@ export function MobileNav() {
             <div
               className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base"
             >
-              <Terminal className="h-4 w-4 transition-all group-hover:scale-110" />
+              <Calculator className="h-4 w-4 transition-all group-hover:scale-110" />
             </div>
             <span>{storeName}</span>
           </Link>
