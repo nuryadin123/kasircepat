@@ -25,7 +25,7 @@ export const navItems = [
   { href: '/sales', icon: ShoppingCart, label: 'Penjualan', roles: ['admin', 'cashier'] },
   { href: '/products', icon: Package, label: 'Produk', roles: ['admin'] },
   { href: '/reports', icon: BarChart2, label: 'Laporan', roles: ['admin'] },
-  { href: '/cash-flow', icon: Landmark, label: 'Arus Kas', roles: ['admin'] },
+  { href: '/cash-flow', icon: Landmark, label: 'Arus Kas', roles: ['admin', 'cashier'] },
 ];
 
 const STORE_NAME_KEY = 'storeName';
