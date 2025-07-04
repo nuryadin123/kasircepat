@@ -44,6 +44,7 @@ const prompt = ai.definePrompt({
   prompt: `You are an intelligent data entry assistant for a point-of-sale application.
 Your task is to analyze the provided PDF, which is a sales receipt or invoice, and extract the transaction details.
 
+- **Completeness**: You must extract ALL line items present in the "Rincian Produk" section of the document. Do not stop after a certain number of items; process the entire list of products from start to finish.
 - **Analyze Line Items**: Identify each line item sold. For each item, extract its full name, any SKU information if available, the quantity, and its price.
 - **Extract SKU**: It is very important to extract the SKU (Stock Keeping Unit) if it is present in the item description. For example, in "Kaos Polos (KP-M-L)", the name is "Kaos Polos" and the SKU is "KP-M-L". If no SKU is present, leave the sku field empty.
 - **Calculate Per-Unit Price**: It is very important that you provide the price PER-UNIT. If the document provides a subtotal for the line item (like in a "Subtotal (IDR)" column) instead of a per-unit price, you MUST calculate the per-unit price by dividing the line item's subtotal by the quantity. For example, if quantity is 2 and subtotal is 33,580, the price is 16,790.
