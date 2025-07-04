@@ -6,35 +6,30 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import {
-  createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   onAuthStateChanged,
   User as FirebaseAuthUser,
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Loader2, Terminal } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
 import type { User } from '@/types';
 
-// Schema for login and registration forms
+// Schema for login form
 const authSchema = z.object({
   email: z.string().email({ message: 'Email tidak valid.' }).trim(),
   password: z.string().min(6, { message: 'Password harus minimal 6 karakter.' }),
-  role: z.enum(['admin', 'cashier']).optional(),
 });
 
 type AuthFormValues = z.infer<typeof authSchema>;
 
 export default function AuthPage() {
-  const [mode, setMode] = useState<'login' | 'register'>('login');
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const router = useRouter();
@@ -45,7 +40,6 @@ export default function AuthPage() {
     defaultValues: {
       email: '',
       password: '',
-      role: 'cashier',
     },
   });
 
@@ -83,57 +77,30 @@ export default function AuthPage() {
 
   const handleAuth = async (data: AuthFormValues) => {
     setIsLoading(true);
-    const { email, password, role } = data;
+    const { email, password } = data;
 
     try {
-      if (mode === 'register') {
-        // --- Registration ---
-        if (!role) {
-          toast({ title: 'Error', description: 'Silakan pilih peran.', variant: 'destructive' });
-          setIsLoading(false);
-          return;
-        }
+      // --- Login ---
+      // 1. Sign in with Firebase Auth
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const { user } = userCredential;
 
-        // 1. Create user in Firebase Auth
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const { user } = userCredential;
+      // 2. Fetch user data from Firestore
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
 
-        // 2. Create user document in Firestore
-        const name = email.split('@')[0];
-        const newUser: Omit<User, 'id'> = {
-          name: name.charAt(0).toUpperCase() + name.slice(1),
-          email,
-          role,
-        };
-        await setDoc(doc(db, 'users', user.uid), newUser);
-        
-        toast({ title: 'Sukses', description: 'Pendaftaran berhasil! Anda akan dialihkan.' });
-        handleSuccessfulLogin(user, newUser);
-
-      } else {
-        // --- Login ---
-        // 1. Sign in with Firebase Auth
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        const { user } = userCredential;
-
-        // 2. Fetch user data from Firestore
-        const userDocRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userDocRef);
-
-        if (!userDoc.exists()) {
-          throw new Error('Data pengguna tidak ditemukan di database.');
-        }
-
-        const userData = userDoc.data() as Omit<User, 'id'>;
-        handleSuccessfulLogin(user, userData);
+      if (!userDoc.exists()) {
+        throw new Error('Data pengguna tidak ditemukan di database.');
       }
+
+      const userData = userDoc.data() as Omit<User, 'id'>;
+      handleSuccessfulLogin(user, userData);
+      
     } catch (error: any) {
-      console.error(`${mode === 'login' ? 'Login' : 'Registration'} failed:`, error);
+      console.error(`Login failed:`, error);
       let errorMessage = 'Terjadi kesalahan. Silakan coba lagi.';
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
         errorMessage = 'Email atau password salah.';
-      } else if (error.code === 'auth/email-already-in-use') {
-        errorMessage = 'Email sudah terdaftar. Silakan masuk.';
       } else if (error.message) {
         errorMessage = error.message;
       }
@@ -165,8 +132,8 @@ export default function AuthPage() {
               <Terminal className="h-5 w-5 transition-all group-hover:scale-110" />
             </div>
           </div>
-          <CardTitle className="font-headline text-2xl">{mode === 'login' ? 'Selamat Datang' : 'Buat Akun Baru'}</CardTitle>
-          <CardDescription>{mode === 'login' ? 'Masuk untuk melanjutkan ke Kasiran.' : 'Isi formulir untuk mendaftar.'}</CardDescription>
+          <CardTitle className="font-headline text-2xl">Selamat Datang</CardTitle>
+          <CardDescription>Masuk untuk melanjutkan ke Kasiran.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -197,50 +164,12 @@ export default function AuthPage() {
                   </FormItem>
                 )}
               />
-              {mode === 'register' && (
-                <FormField
-                  control={form.control}
-                  name="role"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel>Pilih Peran</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          className="flex space-x-4"
-                        >
-                          <FormItem className="flex items-center space-x-2 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="admin" />
-                            </FormControl>
-                            <FormLabel className="font-normal">Admin</FormLabel>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-2 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="cashier" />
-                            </FormControl>
-                            <FormLabel className="font-normal">Kasir</FormLabel>
-                          </FormItem>
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {mode === 'login' ? 'Masuk' : 'Daftar'}
+                Masuk
               </Button>
             </form>
           </Form>
-          <div className="mt-4 text-center text-sm">
-            {mode === 'login' ? "Belum punya akun? " : "Sudah punya akun? "}
-            <Button variant="link" className="p-0 h-auto" onClick={() => setMode(mode === 'login' ? 'register' : 'login')}>
-              {mode === 'login' ? 'Daftar di sini' : 'Masuk di sini'}
-            </Button>
-          </div>
         </CardContent>
       </Card>
     </div>
