@@ -10,7 +10,6 @@ import {
   Settings,
   Terminal,
   Landmark,
-  Users,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
@@ -26,7 +25,6 @@ export const navItems = [
   { href: '/sales', icon: ShoppingCart, label: 'Penjualan', roles: ['admin', 'cashier'] },
   { href: '/products', icon: Package, label: 'Produk', roles: ['admin'] },
   { href: '/reports', icon: BarChart2, label: 'Laporan', roles: ['admin'] },
-  { href: '/customers', icon: Users, label: 'Pelanggan', roles: ['admin'] },
   { href: '/cash-flow', icon: Landmark, label: 'Arus Kas', roles: ['admin', 'cashier'] },
 ];
 

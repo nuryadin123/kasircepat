@@ -41,11 +41,3 @@ export type CashFlowEntry = {
     description: string;
     amount: number;
 };
-
-export type Customer = {
-  id: string;
-  name: string;
-  discount: number;
-  totalSpent: number;
-  joinedDate: string;
-};
