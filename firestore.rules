@@ -1,0 +1,73 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper function to check if a user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to get the role of the currently authenticated user
+    function getUserRole() {
+      // Allow access to the users document to read the role
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    // Helper function to check if the user is an admin
+    function isAdmin() {
+      return isAuthenticated() && getUserRole() == 'admin';
+    }
+
+    // Helper function to check if the user is a cashier
+    function isCashier() {
+        return isAuthenticated() && getUserRole() == 'cashier';
+    }
+
+    // Rules for the 'users' collection
+    // Admins can read all user data. Users can only read their own data.
+    // Only admins can create, update, or delete user documents.
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      // Since sign-up is disabled, only admins can create users.
+      // For updates/deletes, only admins have rights.
+      allow write: if isAdmin();
+    }
+
+    // Rules for the 'products' collection
+    // Admins have full access. Cashiers can only read products.
+    match /products/{productId} {
+      allow read: if isAdmin() || isCashier();
+      allow write: if isAdmin();
+    }
+
+    // Rules for the 'sales' collection
+    // Admins have full access. Cashiers can create and read sales records.
+    match /sales/{saleId} {
+        allow read, create: if isAdmin() || isCashier();
+        allow update, delete: if isAdmin();
+    }
+
+    // Rules for the 'cash-flow' collection
+    // Admins have full access. Cashiers can read all entries but can only create 'Pengeluaran' (Expense) entries.
+    // Cashiers cannot update or delete any entries.
+    match /cash-flow/{entryId} {
+        allow read: if isAdmin() || isCashier();
+        allow create: if isAdmin() || (isCashier() && request.resource.data.type == 'Pengeluaran');
+        allow update, delete: if isAdmin();
+    }
+
+    // Rules for the 'customers' collection
+    // Only admins have access to customer data.
+    match /customers/{customerId} {
+        allow read, write: if isAdmin();
+    }
+
+    // Rules for the 'counters' collection
+    // Both admins and cashiers need to be able to read and write to the counters
+    // as part of the sale creation transaction.
+    match /counters/{counterId} {
+        allow read, write: if isAdmin() || isCashier();
+    }
+  }
+}
