@@ -1,26 +1,47 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Terminal } from 'lucide-react';
 
-export default function HomePage() {
+export default function RoleSelectionPage() {
   const router = useRouter();
 
-  useEffect(() => {
-    // Set a default user role to bypass login for development
+  const handleLogin = (role: 'admin' | 'cashier') => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('userRole', 'admin');
-      router.replace('/dashboard');
+      localStorage.setItem('userRole', role);
+      if (role === 'admin') {
+        router.replace('/dashboard');
+      } else {
+        router.replace('/sales');
+      }
     }
-  }, [router]);
+  };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background">
-      <div className="flex flex-col items-center gap-4">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-muted-foreground">Mengarahkan ke dasbor...</p>
-      </div>
+    <div className="flex items-center justify-center min-h-screen bg-muted/40">
+      <Card className="w-full max-w-sm">
+        <CardHeader className="text-center">
+          <div className="flex justify-center mb-4">
+             <div
+              className="group flex h-12 w-12 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-10 md:w-10 md:text-base"
+            >
+              <Terminal className="h-5 w-5 transition-all group-hover:scale-110" />
+            </div>
+          </div>
+          <CardTitle className="font-headline text-2xl">Selamat Datang di Kasiran</CardTitle>
+          <CardDescription>Silakan masuk dengan memilih peran Anda.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <Button className="w-full" onClick={() => handleLogin('admin')}>
+            Masuk sebagai Admin
+          </Button>
+          <Button variant="outline" className="w-full" onClick={() => handleLogin('cashier')}>
+            Masuk sebagai Kasir
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }

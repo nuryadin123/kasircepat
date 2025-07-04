@@ -15,15 +15,19 @@ export function MobileNav() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [storeName, setStoreName] = useState('Kasiran');
-
-  const updateStoreName = () => {
-    const savedStoreName = localStorage.getItem(STORE_NAME_KEY);
-    if (savedStoreName) {
-      setStoreName(savedStoreName);
-    }
-  };
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
+    const role = localStorage.getItem('userRole');
+    setUserRole(role);
+
+    const updateStoreName = () => {
+      const savedStoreName = localStorage.getItem(STORE_NAME_KEY);
+      if (savedStoreName) {
+        setStoreName(savedStoreName);
+      }
+    };
+    
     updateStoreName();
     window.addEventListener('settings_updated', updateStoreName);
     return () => {
@@ -36,6 +40,8 @@ export function MobileNav() {
     setIsOpen(false);
   };
 
+  const visibleNavItems = navItems.filter(item => userRole && item.roles.includes(userRole));
+
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
@@ -47,7 +53,7 @@ export function MobileNav() {
       <SheetContent side="left" className="sm:max-w-xs flex flex-col">
         <nav className="grid gap-6 text-lg font-medium">
           <Link
-            href="/dashboard"
+            href={userRole === 'admin' ? '/dashboard' : '/sales'}
             onClick={handleLinkClick}
             className="group flex items-center gap-2 text-lg font-semibold"
           >
@@ -58,7 +64,7 @@ export function MobileNav() {
             </div>
             <span>{storeName}</span>
           </Link>
-          {navItems.map((item) => (
+          {visibleNavItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}

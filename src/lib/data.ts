@@ -1,4 +1,4 @@
-import { Product, Sale, User } from '@/types';
+import { Product, Sale, User, Customer } from '@/types';
 
 export const mockUsers: Record<string, User> = {
   admin: {
@@ -27,3 +27,5 @@ export const mockUsers: Record<string, User> = {
 export const mockProducts: Product[] = [];
 
 export const mockSales: Sale[] = [];
+
+export const mockCustomers: Customer[] = [];

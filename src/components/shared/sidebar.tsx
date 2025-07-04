@@ -21,11 +21,11 @@ import {
 } from '@/components/ui/tooltip';
 
 export const navItems = [
-  { href: '/dashboard', icon: LayoutDashboard, label: 'Dasbor' },
-  { href: '/sales', icon: ShoppingCart, label: 'Penjualan' },
-  { href: '/products', icon: Package, label: 'Produk' },
-  { href: '/reports', icon: BarChart2, label: 'Laporan' },
-  { href: '/cash-flow', icon: Landmark, label: 'Arus Kas' },
+  { href: '/dashboard', icon: LayoutDashboard, label: 'Dasbor', roles: ['admin'] },
+  { href: '/sales', icon: ShoppingCart, label: 'Penjualan', roles: ['admin', 'cashier'] },
+  { href: '/products', icon: Package, label: 'Produk', roles: ['admin'] },
+  { href: '/reports', icon: BarChart2, label: 'Laporan', roles: ['admin'] },
+  { href: '/cash-flow', icon: Landmark, label: 'Arus Kas', roles: ['admin'] },
 ];
 
 const STORE_NAME_KEY = 'storeName';
@@ -33,21 +33,28 @@ const STORE_NAME_KEY = 'storeName';
 export function Sidebar() {
   const pathname = usePathname();
   const [storeName, setStoreName] = useState('Kasiran');
-
-  const updateStoreName = () => {
-    const savedStoreName = localStorage.getItem(STORE_NAME_KEY);
-    if (savedStoreName) {
-      setStoreName(savedStoreName);
-    }
-  };
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
+    const role = localStorage.getItem('userRole');
+    setUserRole(role);
+    
+    const updateStoreName = () => {
+      const savedStoreName = localStorage.getItem(STORE_NAME_KEY);
+      if (savedStoreName) {
+        setStoreName(savedStoreName);
+      }
+    };
+    
     updateStoreName();
     window.addEventListener('settings_updated', updateStoreName);
+    
     return () => {
       window.removeEventListener('settings_updated', updateStoreName);
     };
   }, []);
+
+  const visibleNavItems = navItems.filter(item => userRole && item.roles.includes(userRole));
 
   return (
     <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex">
@@ -60,7 +67,7 @@ export function Sidebar() {
           <span className="sr-only">{storeName}</span>
         </Link>
         <TooltipProvider>
-          {navItems.map((item) => (
+          {visibleNavItems.map((item) => (
             <Tooltip key={item.href}>
               <TooltipTrigger asChild>
                 <Link
@@ -87,7 +94,7 @@ export function Sidebar() {
                 href="/settings"
                 className={cn(
                   'flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8',
-                  pathname === '/settings' && 'bg-accent text-accent-foreground'
+                   pathname === '/settings' && 'bg-accent text-accent-foreground'
                 )}
               >
                 <Settings className="h-5 w-5" />
