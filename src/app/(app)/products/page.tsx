@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Header } from '@/components/shared/header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { PlusCircle, Upload, Search } from 'lucide-react';
+import { PlusCircle, Upload, Search, Loader2 } from 'lucide-react';
 import { DataTable } from '@/components/data-table';
 import { columns, productActions } from '@/components/products/columns';
 import { db } from '@/lib/firebase';
@@ -16,22 +17,45 @@ import { ProductImportDialog } from '@/components/products/product-import-dialog
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
 
-  // Fetch products on component mount
   useEffect(() => {
+    const role = localStorage.getItem('userRole');
+    if (role !== 'admin') {
+      router.replace('/sales');
+      return;
+    }
+
     async function getProducts() {
-      const productsCol = query(collection(db, 'products'), orderBy('name', 'asc'));
-      const productSnapshot = await getDocs(productsCol);
-      const productList = productSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
-      setProducts(productList);
+      try {
+        const productsCol = query(collection(db, 'products'), orderBy('name', 'asc'));
+        const productSnapshot = await getDocs(productsCol);
+        const productList = productSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
+        setProducts(productList);
+      } catch (error) {
+        console.error("Failed to fetch products:", error);
+      } finally {
+        setIsLoading(false);
+      }
     }
     getProducts();
-  }, []);
+  }, [router]);
 
-  // Filter products based on search term
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  
+  if (isLoading) {
+    return (
+      <>
+        <Header title="Manajemen Produk" />
+        <div className="flex items-center justify-center mt-10">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
