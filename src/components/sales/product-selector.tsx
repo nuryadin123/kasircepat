@@ -9,8 +9,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
 import type { Product } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -20,45 +18,41 @@ interface ProductSelectorProps {
 }
 
 export function ProductSelector({ products, onProductSelect }: ProductSelectorProps) {
-  const [selectedProductId, setSelectedProductId] = React.useState<string | undefined>(undefined);
+  // A key is used to reset the Select component after a selection is made
+  const [selectKey, setSelectKey] = React.useState(Date.now());
 
-  const handleAdd = () => {
-    if (!selectedProductId) return;
-    const product = products.find((p) => p.id === selectedProductId);
+  const handleProductSelect = (productId: string) => {
+    if (!productId) return;
+    const product = products.find((p) => p.id === productId);
     if (product) {
       onProductSelect(product);
     }
-    // Reset selection after adding
-    setSelectedProductId(undefined);
+    // Reset the select component so the placeholder shows again,
+    // allowing the same item to be selected consecutively.
+    setSelectKey(Date.now());
   };
 
   return (
     <Card>
-        <CardHeader>
-            <CardTitle className="font-headline text-lg">Tambah Item</CardTitle>
-        </CardHeader>
-        <CardContent>
-            <div className="flex items-center gap-2">
-                <Select onValueChange={setSelectedProductId} value={selectedProductId}>
-                    <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="Pilih produk..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectGroup>
-                        {products.map((product) => (
-                            <SelectItem key={product.id} value={product.id}>
-                                {`${product.name} - Rp${new Intl.NumberFormat('id-ID').format(product.price)}`}
-                            </SelectItem>
-                        ))}
-                        </SelectGroup>
-                    </SelectContent>
-                </Select>
-                <Button onClick={handleAdd} disabled={!selectedProductId}> 
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Tambah
-                </Button>
-            </div>
-        </CardContent>
+      <CardHeader>
+        <CardTitle className="font-headline text-lg">Tambah Item</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Select onValueChange={handleProductSelect} key={selectKey}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Pilih produk untuk ditambahkan..." />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              {products.map((product) => (
+                <SelectItem key={product.id} value={product.id}>
+                  {`${product.name} - Rp${new Intl.NumberFormat('id-ID').format(product.price)}`}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </CardContent>
     </Card>
   );
 }
