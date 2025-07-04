@@ -14,7 +14,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, FileUp } from 'lucide-react';
-import { importSaleFromPdf, type ImportSaleOutput } from '@/ai/flows/import-sale-from-pdf-flow';
+import { importSaleFromPdf } from '@/ai/flows/import-sale-from-pdf-flow';
+import type { ImportSaleOutput } from '@/ai/flows/sale-import-types';
 
 interface SalesImportDialogProps {
   onImportSuccess: (data: ImportSaleOutput) => void;

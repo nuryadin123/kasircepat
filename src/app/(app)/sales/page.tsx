@@ -12,7 +12,7 @@ import { db } from '@/lib/firebase';
 import { collection, getDocs, doc, runTransaction, getDoc, query, where } from 'firebase/firestore';
 import { Loader2, FileUp } from 'lucide-react';
 import { SalesImportDialog } from '@/components/sales/sales-import-dialog';
-import type { ImportSaleOutput } from '@/ai/flows/import-sale-from-pdf-flow';
+import type { ImportSaleOutput } from '@/ai/flows/sale-import-types';
 import { Button } from '@/components/ui/button';
 
 const DISCOUNT_PERCENTAGE_KEY = 'discountPercentage';
@@ -150,17 +150,19 @@ function SalesPageContent() {
 
   const handleProductSelect = (product: Product) => {
     setCart((prevCart) => {
-      const existingItem = prevCart.find(
+      const existingItemIndex = prevCart.findIndex(
         (item) => item.productId === product.id
       );
 
-      if (existingItem) {
+      if (existingItemIndex > -1) {
         // If item already exists, just increase the quantity
-        return prevCart.map((item) =>
-          item.productId === product.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
+        const updatedCart = [...prevCart];
+        updatedCart[existingItemIndex] = {
+            ...updatedCart[existingItemIndex],
+            quantity: updatedCart[existingItemIndex].quantity + 1,
+        };
+        return updatedCart;
+
       } else {
         // If item doesn't exist, add it to the cart
         return [
