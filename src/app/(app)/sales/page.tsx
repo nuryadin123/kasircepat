@@ -146,14 +146,14 @@ function SalesPageContent() {
     if (editingSaleId) {
         // Update logic
         try {
-            const saleRef = doc(db, 'sales', editingSaleId);
-            const originalSaleSnap = await getDoc(saleRef); // Fetch outside transaction to get transactionId
-            if (!originalSaleSnap.exists()) {
-                throw new Error("Sale does not exist anymore.");
-            }
-            const originalSaleData = originalSaleSnap.data();
-
             await runTransaction(db, async (transaction) => {
+                const saleRef = doc(db, 'sales', editingSaleId);
+                const saleSnap = await transaction.get(saleRef);
+                if (!saleSnap.exists()) {
+                    throw new Error("Penjualan tidak ditemukan lagi.");
+                }
+                const originalSaleData = saleSnap.data();
+
                 // Reads must be first
                 let cogsSnap;
                 if (originalSaleData.transactionId) {
@@ -168,20 +168,20 @@ function SalesPageContent() {
                 const totalCost = cart.reduce((acc, item) => acc + (item.cost || 0) * item.quantity, 0);
 
                 // Now perform writes
-                transaction.update(saleRef, { items: cart, subtotal, discountAmount, total });
+                transaction.update(saleRef, { items: cart, subtotal, discountAmount, total, date: new Date() });
                 
                 if (originalSaleData.transactionId) {
                     if (cogsSnap && !cogsSnap.empty) {
                         const cogsDocRef = cogsSnap.docs[0].ref;
                         if (totalCost > 0) {
-                            transaction.update(cogsDocRef, { amount: totalCost, date: new Date().toISOString() });
+                            transaction.update(cogsDocRef, { amount: totalCost, date: new Date() });
                         } else {
                             transaction.delete(cogsDocRef);
                         }
                     } else if (totalCost > 0) {
                         const expenseRef = doc(collection(db, 'cash-flow'));
                         transaction.set(expenseRef, {
-                            date: new Date().toISOString(),
+                            date: new Date(),
                             type: 'Pengeluaran',
                             description: `Biaya Pokok Penjualan ${originalSaleData.transactionId}`,
                             amount: totalCost,
@@ -198,7 +198,7 @@ function SalesPageContent() {
             toast({ title: "Gagal Memperbarui", description: "Terjadi kesalahan saat menyimpan perubahan.", variant: "destructive" });
         }
     } else {
-        // Create Logic (existing code)
+        // Create Logic
          try {
             const newSale = await runTransaction(db, async (transaction) => {
                 const counterRef = doc(db, 'counters', 'sales');
@@ -230,7 +230,7 @@ function SalesPageContent() {
                 if (totalCost > 0) {
                     const expenseRef = doc(collection(db, 'cash-flow'));
                     const expenseData = {
-                        date: new Date().toISOString(),
+                        date: new Date(),
                         type: 'Pengeluaran',
                         description: `Biaya Pokok Penjualan ${formattedTransactionId}`,
                         amount: totalCost,
