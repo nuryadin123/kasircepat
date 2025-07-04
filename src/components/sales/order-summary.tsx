@@ -86,7 +86,10 @@ export function OrderSummary({
             items.map((item) => (
               <div key={item.cartId} className="flex items-center gap-4">
                 <div className="flex-1">
-                  <p className="font-medium">{item.name}</p>
+                  <p className="font-medium">
+                    {item.name}
+                    {item.variant && <span className="text-sm text-muted-foreground ml-1">({item.variant})</span>}
+                  </p>
                   <div className="flex items-center gap-2 mt-1">
                     <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => onQuantityChange(item.cartId, item.quantity - 1)}>
                       <MinusCircle className="h-4 w-4" />

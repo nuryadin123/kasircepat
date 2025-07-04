@@ -9,6 +9,10 @@ export const columns = [
     header: 'Nama Produk',
   },
   {
+    accessorKey: 'variant',
+    header: 'Varian',
+  },
+  {
     accessorKey: 'price',
     header: 'Harga Jual',
     cell: (row: Product) => `Rp${new Intl.NumberFormat('id-ID').format(row.price)}`,

@@ -1,6 +1,7 @@
 export type Product = {
   id: string;
   name: string;
+  variant?: string;
   price: number;
   stock: number;
   createdAt: string;
@@ -10,6 +11,7 @@ export type Product = {
 export type SaleItem = {
   productId: string;
   name: string;
+  variant?: string;
   price: number;
   quantity: number;
   cost: number;

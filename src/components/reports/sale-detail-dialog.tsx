@@ -49,7 +49,10 @@ export function SaleDetailDialog({ sale, children }: SaleDetailDialogProps) {
             {sale.items.map((item, index) => (
               <div key={`${item.productId}-${index}`} className="flex justify-between items-center text-sm">
                 <div>
-                  <p className="font-medium">{item.name}</p>
+                  <p className="font-medium">
+                    {item.name}
+                    {item.variant && <span className="text-xs text-muted-foreground ml-1">({item.variant})</span>}
+                  </p>
                   <p className="text-muted-foreground">
                     {item.quantity} x Rp{new Intl.NumberFormat('id-ID').format(item.price)}
                   </p>

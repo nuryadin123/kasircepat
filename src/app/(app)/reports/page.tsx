@@ -174,7 +174,7 @@ export default function ReportsPage() {
                 startY: finalY,
                 head: [['Nama Produk', 'Kuantitas', 'Harga Satuan', 'Subtotal']],
                 body: sale.items.map(item => [
-                    item.name,
+                    `${item.name}${item.variant ? ` (${item.variant})` : ''}`,
                     item.quantity,
                     `Rp${new Intl.NumberFormat('id-ID').format(item.price)}`,
                     `Rp${new Intl.NumberFormat('id-ID').format(item.price * item.quantity)}`

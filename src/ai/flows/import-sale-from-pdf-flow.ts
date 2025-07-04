@@ -20,7 +20,8 @@ const ImportSaleInputSchema = z.object({
 export type ImportSaleInput = z.infer<typeof ImportSaleInputSchema>;
 
 const SaleItemSchema = z.object({
-    name: z.string().describe('The name of the product or item sold.'),
+    name: z.string().describe('The name of the product or item sold, without the variant.'),
+    variant: z.string().optional().describe('The specific variant of the product, if any (e.g., color, size).'),
     quantity: z.number().describe('The quantity of the item sold.'),
     price: z.number().describe('The price of a single unit of the item.'),
 });
@@ -43,7 +44,8 @@ const prompt = ai.definePrompt({
   prompt: `You are an intelligent data entry assistant for a point-of-sale application.
 Your task is to analyze the provided PDF, which is a sales receipt or invoice, and extract the transaction details.
 
-- **Analyze Line Items**: Identify each line item sold. For each item, extract its full name, the quantity, and its price.
+- **Analyze Line Items**: Identify each line item sold. For each item, extract its full name, any variant information (like size, color, type), the quantity, and its price.
+- **Separate Name and Variant**: It is very important to separate the base product name from its variant. For example, in "Kaos Polos (Merah, L)", the name is "Kaos Polos" and the variant is "Merah, L". If no variant is present, leave the variant field empty.
 - **Calculate Per-Unit Price**: It is very important that you provide the price PER-UNIT. If the document provides a subtotal for the line item (like in a "Subtotal (IDR)" column) instead of a per-unit price, you MUST calculate the per-unit price by dividing the line item's subtotal by the quantity. For example, if quantity is 2 and subtotal is 33,580, the price is 16,790.
 - **Extract Date**: Identify the date of the transaction (look for "Tanggal Invoice"). Convert it to a valid ISO 8601 string (e.g., "YYYY-MM-DDTHH:mm:ss.sssZ").
 - **Ignore Other Costs**: Do not extract overall totals, shipping costs ("Subtotal Ongkir"), taxes, or discounts. Only focus on the individual product line items.
