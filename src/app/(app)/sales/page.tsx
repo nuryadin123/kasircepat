@@ -51,14 +51,47 @@ function SalesPageContent() {
   }, []);
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchAndSortProducts = async () => {
       try {
+        // 1. Fetch all products and all sales in parallel
         const productsCol = collection(db, 'products');
-        const productSnapshot = await getDocs(productsCol);
+        const salesCol = collection(db, 'sales');
+        
+        const [productSnapshot, salesSnapshot] = await Promise.all([
+            getDocs(productsCol),
+            getDocs(salesCol)
+        ]);
+
         const productList = productSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
-        setProducts(productList);
+        const salesList: Sale[] = salesSnapshot.docs.map(doc => doc.data() as Sale);
+
+        // 2. Calculate total quantity sold for each product
+        const salesCount: { [productId: string]: number } = {};
+        salesList.forEach(sale => {
+            if (sale.items && Array.isArray(sale.items)) {
+                sale.items.forEach(item => {
+                    salesCount[item.productId] = (salesCount[item.productId] || 0) + item.quantity;
+                });
+            }
+        });
+
+        // 3. Add sales count to each product and sort
+        const sortedProducts = productList
+            .map(product => ({
+                ...product,
+                totalSold: salesCount[product.id] || 0
+            }))
+            .sort((a, b) => {
+                // Sort by totalSold descending, then by name ascending
+                if (b.totalSold !== a.totalSold) {
+                    return b.totalSold - a.totalSold;
+                }
+                return a.name.localeCompare(b.name);
+            });
+            
+        setProducts(sortedProducts);
       } catch (error) {
-        console.error("Error fetching products: ", error);
+        console.error("Error fetching and sorting products: ", error);
         toast({
           title: "Gagal Memuat Produk",
           description: "Tidak dapat mengambil data produk dari server.",
@@ -67,7 +100,7 @@ function SalesPageContent() {
       }
     };
     
-    fetchProducts();
+    fetchAndSortProducts();
   }, [toast]);
 
   useEffect(() => {
