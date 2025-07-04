@@ -6,6 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { SaleItem, Customer } from '@/types';
 import { X, MinusCircle, PlusCircle, User, Percent } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 
 interface OrderSummaryProps {
   items: SaleItem[];
@@ -21,7 +22,7 @@ export function OrderSummary({ items, customers, selectedCustomerId, onItemRemov
   const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
   const selectedCustomer = customers.find(c => c.id === selectedCustomerId);
-  const discountPercentage = selectedCustomer?.discount || 0;
+  const discountPercentage = selectedCustomer ? selectedCustomer.discount : 14.5;
   const discountAmount = subtotal * (discountPercentage / 100);
   const total = subtotal - discountAmount;
 
@@ -68,10 +69,21 @@ export function OrderSummary({ items, customers, selectedCustomerId, onItemRemov
                 <div className="flex-1">
                   <p className="font-medium">{item.name}</p>
                   <div className="flex items-center gap-2 mt-1">
-                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => onQuantityChange(item.productId, item.quantity - 1)} disabled={item.quantity <= 1}>
+                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => onQuantityChange(item.productId, item.quantity - 1)}>
                       <MinusCircle className="h-4 w-4" />
                     </Button>
-                    <span>{item.quantity}</span>
+                    <Input
+                        type="number"
+                        value={item.quantity}
+                        onChange={(e) => {
+                            const newQuantity = parseInt(e.target.value, 10);
+                            if (!isNaN(newQuantity)) {
+                                onQuantityChange(item.productId, newQuantity >= 0 ? newQuantity : 0);
+                            }
+                        }}
+                        className="h-8 w-14 text-center"
+                        min="0"
+                    />
                     <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => onQuantityChange(item.productId, item.quantity + 1)}>
                       <PlusCircle className="h-4 w-4" />
                     </Button>
@@ -96,7 +108,7 @@ export function OrderSummary({ items, customers, selectedCustomerId, onItemRemov
           <span>Subtotal</span>
           <span>Rp{new Intl.NumberFormat('id-ID').format(subtotal)}</span>
         </div>
-        {discountAmount > 0 && (
+        {discountPercentage > 0 && (
           <div className="flex justify-between text-primary font-medium">
             <span>Diskon ({discountPercentage}%)</span>
             <span>-Rp{new Intl.NumberFormat('id-ID').format(discountAmount)}</span>

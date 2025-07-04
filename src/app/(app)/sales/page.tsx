@@ -122,7 +122,7 @@ export default function SalesPage() {
         
         const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
         const selectedCustomer = customers.find(c => c.id === selectedCustomerId);
-        const discountPercentage = selectedCustomer?.discount || 0;
+        const discountPercentage = selectedCustomer ? selectedCustomer.discount : 14.5;
         const discountAmount = subtotal * (discountPercentage / 100);
         const total = subtotal - discountAmount;
         
@@ -183,7 +183,7 @@ export default function SalesPage() {
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const selectedCustomer = customers.find(c => c.id === selectedCustomerId);
-  const discountPercentage = selectedCustomer?.discount || 0;
+  const discountPercentage = selectedCustomer ? selectedCustomer.discount : 14.5;
   const discountAmount = subtotal * (discountPercentage / 100);
   const total = subtotal - discountAmount;
 
